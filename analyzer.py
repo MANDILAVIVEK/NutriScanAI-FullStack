@@ -1,29 +1,16 @@
 def analyze_nutrition(sugar, protein, carbs, salt):
 
-    try:
-
-        sugar = float(sugar)
-        protein = float(protein)
-        carbs = float(carbs)
-        salt = float(salt)
-
-    except:
-
-        return {
-            "score": 0,
-            "status": "Unknown",
-            "color": "gray",
-            "advice": ["Unable to analyze nutrition"]
-        }
-
     score = 100
 
     advice = []
 
-    # Sugar check
+    # -----------------------------------
+    # SUGAR
+    # -----------------------------------
+
     if sugar > 20:
 
-        score -= 25
+        score -= 20
 
         advice.append(
             "⚠ High sugar detected"
@@ -35,13 +22,16 @@ def analyze_nutrition(sugar, protein, carbs, salt):
             "✅ Sugar level is acceptable"
         )
 
-    # Salt check
+    # -----------------------------------
+    # SALT
+    # -----------------------------------
+
     if salt > 1.5:
 
-        score -= 25
+        score -= 15
 
         advice.append(
-            "⚠ High salt intake"
+            "⚠ High salt content"
         )
 
     else:
@@ -50,10 +40,13 @@ def analyze_nutrition(sugar, protein, carbs, salt):
             "✅ Salt level is moderate"
         )
 
-    # Carbs check
-    if carbs > 70:
+    # -----------------------------------
+    # CARBS
+    # -----------------------------------
 
-        score -= 15
+    if carbs > 60:
+
+        score -= 10
 
         advice.append(
             "⚠ High carbohydrate content"
@@ -62,43 +55,64 @@ def analyze_nutrition(sugar, protein, carbs, salt):
     else:
 
         advice.append(
-            "✅ Balanced carbohydrates"
+            "✅ Carbohydrate level is balanced"
         )
 
-    # Protein bonus
-    if protein > 10:
+    # -----------------------------------
+    # PROTEIN
+    # -----------------------------------
 
-        score += 10
+    if protein < 8:
 
-        advice.append(
-            "💪 Good protein content"
-        )
-
-    else:
+        score -= 10
 
         advice.append(
             "⚠ Low protein content"
         )
 
-    # Final status
+    else:
+
+        advice.append(
+            "✅ Good protein source"
+        )
+
+    # -----------------------------------
+    # SCORE LIMIT
+    # -----------------------------------
+
+    if score < 0:
+
+        score = 0
+
+    # -----------------------------------
+    # STATUS
+    # -----------------------------------
+
     if score >= 80:
 
         status = "Healthy"
+
         color = "green"
 
-    elif score >= 50:
+    elif score >= 60:
 
         status = "Moderate"
+
         color = "orange"
 
     else:
 
         status = "Unhealthy"
+
         color = "red"
 
     return {
+
         "score": score,
+
         "status": status,
+
         "color": color,
+
         "advice": advice
     }
