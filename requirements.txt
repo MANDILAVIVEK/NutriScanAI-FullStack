@@ -1,4 +1,8 @@
-streamlit,
-requests,
-opencv-python,
+streamlit
+requests
+pandas
+opencv-python-headless
 pyzbar
+pillow
+pytesseract
+numpy
