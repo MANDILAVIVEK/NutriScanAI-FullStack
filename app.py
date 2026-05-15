@@ -6,6 +6,7 @@ from product_api import fetch_product_data
 from analyzer import analyze_nutrition
 from ocr_reader import extract_text
 from ocr_parser import extract_nutrition_values
+from barcode_image_scanner import scan_barcode_from_image
 
 # Scanner only for local Windows
 if platform.system() == "Windows":
@@ -38,9 +39,35 @@ if scan_barcode is not None:
             barcode = scanned_barcode
             st.success(f"✅ Scanned Barcode: {barcode}")
 else:
-    st.info("📷 Camera barcode scanning is available only on local Windows. Use manual barcode input on cloud.")
+    st.info("📷 Camera barcode scanning is available only on local Windows. Use manual input or barcode image upload.")
 
 barcode = st.text_input("Enter Barcode", value=barcode)
+
+# -------------------------------
+# BARCODE IMAGE UPLOAD
+# -------------------------------
+
+st.subheader("🖼 Upload Barcode Image")
+
+barcode_image = st.file_uploader(
+    "Upload barcode image",
+    type=["jpg", "jpeg", "png"],
+    key="barcode_image"
+)
+
+if barcode_image is not None:
+
+    with open("uploaded_barcode.jpg", "wb") as f:
+        f.write(barcode_image.getbuffer())
+
+    detected_barcode = scan_barcode_from_image("uploaded_barcode.jpg")
+
+    if detected_barcode:
+        st.success(f"✅ Barcode detected: {detected_barcode}")
+        barcode = detected_barcode
+
+    else:
+        st.error("❌ Could not detect barcode. Try a clearer barcode image.")
 
 # -------------------------------
 # PRODUCT API FETCH
@@ -160,7 +187,8 @@ st.subheader("🧠 OCR Nutrition Extraction")
 
 uploaded_file = st.file_uploader(
     "Upload Nutrition Label Image",
-    type=["jpg", "jpeg", "png"]
+    type=["jpg", "jpeg", "png"],
+    key="nutrition_label"
 )
 
 if uploaded_file is not None:
@@ -180,54 +208,22 @@ if uploaded_file is not None:
     st.subheader("🧪 Extracted Nutrition Values")
     st.write(nutrition)
 
-    # -------------------------------
-    # OCR QUALITY WARNING
-    # -------------------------------
-
     missing_values = [
         key for key, value in nutrition.items()
         if value == "Not Found"
     ]
 
     if missing_values:
-
         st.warning("⚠ OCR could not read some nutrition values clearly.")
-
-        st.info(
-            "📸 Please upload a clearer cropped image of only the nutrition table. "
-            "Keep it straight, avoid glare, and use good lighting."
-        )
-
-    # -------------------------------
-    # MANUAL CORRECTION FALLBACK
-    # -------------------------------
+        st.info("📸 Please upload a clearer cropped image of only the nutrition table.")
 
     st.subheader("✍️ Correct / Fill Nutrition Values")
 
-    protein_input = st.text_input(
-        "Protein (g)",
-        value="" if nutrition.get("protein") == "Not Found" else nutrition.get("protein", "")
-    )
-
-    carbs_input = st.text_input(
-        "Carbohydrates (g)",
-        value="" if nutrition.get("carbs") == "Not Found" else nutrition.get("carbs", "")
-    )
-
-    sugar_input = st.text_input(
-        "Sugar (g)",
-        value="" if nutrition.get("sugar") == "Not Found" else nutrition.get("sugar", "")
-    )
-
-    fat_input = st.text_input(
-        "Fat (g)",
-        value="" if nutrition.get("fat") == "Not Found" else nutrition.get("fat", "")
-    )
-
-    sodium_input = st.text_input(
-        "Sodium (mg)",
-        value="" if nutrition.get("sodium") == "Not Found" else nutrition.get("sodium", "")
-    )
+    protein_input = st.text_input("Protein (g)", value="" if nutrition.get("protein") == "Not Found" else nutrition.get("protein", ""))
+    carbs_input = st.text_input("Carbohydrates (g)", value="" if nutrition.get("carbs") == "Not Found" else nutrition.get("carbs", ""))
+    sugar_input = st.text_input("Sugar (g)", value="" if nutrition.get("sugar") == "Not Found" else nutrition.get("sugar", ""))
+    fat_input = st.text_input("Fat (g)", value="" if nutrition.get("fat") == "Not Found" else nutrition.get("fat", ""))
+    sodium_input = st.text_input("Sodium (mg)", value="" if nutrition.get("sodium") == "Not Found" else nutrition.get("sodium", ""))
 
     if st.button("✅ Analyze Corrected Values"):
 
@@ -248,12 +244,7 @@ if uploaded_file is not None:
             st.subheader("📊 Corrected Nutrition Chart")
             st.bar_chart(corrected_df, x="Nutrient", y="Value")
 
-            result = analyze_nutrition(
-                sugar,
-                protein,
-                carbs,
-                salt
-            )
+            result = analyze_nutrition(sugar, protein, carbs, salt)
 
             st.subheader("🚦 Corrected Health Score")
 
@@ -277,68 +268,6 @@ if uploaded_file is not None:
 
         except:
             st.error("Please enter valid numeric values.")
-
-    # -------------------------------
-    # OCR CHART
-    # -------------------------------
-
-    try:
-
-        chart_df = pd.DataFrame({
-            "Nutrient": ["Protein", "Carbs", "Sugar", "Fat"],
-            "Value": [
-                float(nutrition["protein"]),
-                float(nutrition["carbs"]),
-                float(nutrition["sugar"]),
-                float(nutrition["fat"])
-            ]
-        })
-
-        st.subheader("📊 OCR Nutrition Chart")
-        st.bar_chart(chart_df, x="Nutrient", y="Value")
-
-    except:
-
-        st.warning("⚠ Unable to generate OCR chart because some nutrition values are missing.")
-
-    # -------------------------------
-    # OCR HEALTH SCORE
-    # -------------------------------
-
-    try:
-
-        sugar = float(nutrition["sugar"])
-        protein = float(nutrition["protein"])
-        carbs = float(nutrition["carbs"])
-        sodium = float(nutrition["sodium"])
-
-        salt = sodium / 1000
-
-        result = analyze_nutrition(sugar, protein, carbs, salt)
-
-        st.subheader("🚦 OCR Health Score")
-
-        score = result["score"]
-        status = result["status"]
-        color = result["color"]
-
-        st.metric("Health Score", f"{score}/100")
-
-        if color == "green":
-            st.success(f"🟢 {status}")
-        elif color == "orange":
-            st.warning(f"🟡 {status}")
-        else:
-            st.error(f"🔴 {status}")
-
-        st.subheader("🤖 AI Recommendations")
-
-        for tip in result["advice"]:
-            st.write(tip)
-
-    except:
-
-        st.warning("⚠ Unable to calculate OCR health score because OCR values are incomplete.")
 
 st.markdown("---")
 st.caption("Made with Streamlit ❤️")
