@@ -2,6 +2,7 @@ import cv2
 import pytesseract
 from PIL import Image
 import platform
+import os
 
 # -----------------------------------
 # TESSERACT PATH
@@ -18,15 +19,20 @@ else:
     pytesseract.pytesseract.tesseract_cmd = (
         "/usr/bin/tesseract"
     )
+
+
 def extract_text(image_path):
 
-    # Read image using OpenCV
+    # Read image
     image = cv2.imread(image_path)
+
+    if image is None:
+        return "Image not found"
 
     # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Resize image for better OCR
+    # Resize image
     gray = cv2.resize(
         gray,
         None,
@@ -35,10 +41,10 @@ def extract_text(image_path):
         interpolation=cv2.INTER_CUBIC
     )
 
-    # Noise removal
+    # Remove noise
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Thresholding
+    # Threshold
     gray = cv2.threshold(
         gray,
         0,
@@ -46,12 +52,12 @@ def extract_text(image_path):
         cv2.THRESH_BINARY + cv2.THRESH_OTSU
     )[1]
 
-    # Save processed image temporarily
+    # Save temporary image
     processed_path = "processed_image.png"
 
     cv2.imwrite(processed_path, gray)
 
-    # OCR extraction
+    # OCR
     text = pytesseract.image_to_string(
         Image.open(processed_path)
     )
