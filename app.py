@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+import platform
 
 from analyzer import analyze_nutrition
 from scanner import scan_barcode
@@ -22,23 +23,34 @@ st.set_page_config(
 # -----------------------------------
 
 st.title("🥗 NutriScanAI")
-st.write("AI-powered nutrition analysis using Barcode + OCR")
+
+st.write(
+    "AI-powered nutrition analysis using Barcode + OCR"
+)
+
+# -----------------------------------
+# BARCODE VARIABLE
+# -----------------------------------
+
+barcode = ""
 
 # -----------------------------------
 # BARCODE SCANNER
 # -----------------------------------
 
-barcode = ""
+if platform.system() == "Windows":
 
-if st.button("📷 Scan Barcode"):
+    if st.button("📷 Scan Barcode"):
 
-    scanned_barcode = scan_barcode()
+        scanned_barcode = scan_barcode()
 
-    if scanned_barcode:
+        if scanned_barcode:
 
-        barcode = scanned_barcode
+            barcode = scanned_barcode
 
-        st.success(f"Detected Barcode: {barcode}")
+            st.success(
+                f"Detected Barcode: {barcode}"
+            )
 
 # -----------------------------------
 # MANUAL BARCODE INPUT
@@ -52,13 +64,18 @@ barcode = st.text_input("Enter Barcode")
 
 if barcode:
 
-    url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+    url = (
+        f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
+    )
 
     headers = {
         "User-Agent": "NutriScanAI/1.0"
     }
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(
+        url,
+        headers=headers
+    )
 
     data = response.json()
 
@@ -71,25 +88,49 @@ if barcode:
         product = data["product"]
 
         # Product details
-        product_name = product.get("product_name", "N/A")
-        brand = product.get("brands", "N/A")
+
+        product_name = product.get(
+            "product_name",
+            "N/A"
+        )
+
+        brand = product.get(
+            "brands",
+            "N/A"
+        )
 
         # Nutrition values
-        nutriments = product.get("nutriments", {})
+
+        nutriments = product.get(
+            "nutriments",
+            {}
+        )
 
         sugar = nutriments.get("sugars_100g")
+
         protein = nutriments.get("proteins_100g")
-        carbs = nutriments.get("carbohydrates_100g")
+
+        carbs = nutriments.get(
+            "carbohydrates_100g"
+        )
+
         salt = nutriments.get("salt_100g")
 
         # -----------------------------------
-        # PRODUCT INFORMATION
+        # PRODUCT INFO
         # -----------------------------------
 
         st.subheader("📦 Product Information")
 
-        st.write("**Product Name:**", product_name)
-        st.write("**Brand:**", brand)
+        st.write(
+            "**Product Name:**",
+            product_name
+        )
+
+        st.write(
+            "**Brand:**",
+            brand
+        )
 
         # -----------------------------------
         # NUTRITION DATA
@@ -99,29 +140,38 @@ if barcode:
 
         st.write(
             "**Sugar:**",
-            sugar if sugar is not None else "Data Missing"
+            sugar if sugar is not None
+            else "Data Missing"
         )
 
         st.write(
             "**Protein:**",
-            protein if protein is not None else "Data Missing"
+            protein if protein is not None
+            else "Data Missing"
         )
 
         st.write(
             "**Carbohydrates:**",
-            carbs if carbs is not None else "Data Missing"
+            carbs if carbs is not None
+            else "Data Missing"
         )
 
         st.write(
             "**Salt:**",
-            salt if salt is not None else "Data Missing"
+            salt if salt is not None
+            else "Data Missing"
         )
 
         # -----------------------------------
         # HEALTH ANALYSIS
         # -----------------------------------
 
-        if None not in [sugar, protein, carbs, salt]:
+        if None not in [
+            sugar,
+            protein,
+            carbs,
+            salt
+        ]:
 
             result = analyze_nutrition(
                 sugar,
@@ -133,13 +183,45 @@ if barcode:
             st.subheader("🚦 Health Score")
 
             score = result["score"]
+
             status = result["status"]
+
             color = result["color"]
 
             st.metric(
                 label="Health Score",
                 value=f"{score}/100"
             )
+
+            # -----------------------------------
+            # GRADE SYSTEM
+            # -----------------------------------
+
+            if score >= 90:
+
+                grade = "A"
+
+            elif score >= 75:
+
+                grade = "B"
+
+            elif score >= 60:
+
+                grade = "C"
+
+            elif score >= 40:
+
+                grade = "D"
+
+            else:
+
+                grade = "E"
+
+            st.write(f"🏆 Grade: {grade}")
+
+            # -----------------------------------
+            # STATUS COLOR
+            # -----------------------------------
 
             if color == "green":
 
@@ -153,19 +235,11 @@ if barcode:
 
                 st.error(f"🔴 {status}")
 
-            # -----------------------------------
-            # AI RECOMMENDATIONS
-            # -----------------------------------
-
-            st.subheader("🤖 AI Recommendations")
-
-            for tip in result["advice"]:
-
-                st.write(tip)
-
         else:
 
-            st.warning("⚠ Some nutrition data is missing")
+            st.warning(
+                "⚠ Some nutrition data is missing"
+            )
 
     else:
 
@@ -182,73 +256,103 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
+# -----------------------------------
+# OCR PROCESSING
+# -----------------------------------
+
 if uploaded_file is not None:
 
     # Save uploaded image
-    with open("uploaded_label.jpg", "wb") as f:
 
-        f.write(uploaded_file.getbuffer())
+    with open(
+        "uploaded_label.jpg",
+        "wb"
+    ) as f:
 
-    st.success("✅ Image uploaded successfully")
+        f.write(
+            uploaded_file.getbuffer()
+        )
+
+    st.success(
+        "✅ Image uploaded successfully"
+    )
 
     # -----------------------------------
-    # OCR EXTRACTION
+    # OCR TEXT EXTRACTION
     # -----------------------------------
 
-    text = extract_text("uploaded_label.jpg")
+    text = extract_text(
+        "uploaded_label.jpg"
+    )
 
     st.subheader("📄 OCR Extracted Text")
 
     st.text(text)
 
     # -----------------------------------
-    # OCR PARSING
+    # PARSE NUTRITION
     # -----------------------------------
 
-    nutrition = extract_nutrition_values(text)
+    nutrition = extract_nutrition_values(
+        text
+    )
 
-    st.subheader("🧪 Extracted Nutrition Values")
+    st.subheader(
+        "🧪 Extracted Nutrition Values"
+    )
 
     st.write(nutrition)
 
     # -----------------------------------
-    # NUTRITION CHART
+    # CHART
     # -----------------------------------
 
     try:
 
-        protein_value = float(nutrition["protein"])
-        carbs_value = float(nutrition["carbs"])
-        sugar_value = float(nutrition["sugar"])
-        fat_value = float(nutrition["fat"])
-
         chart_df = pd.DataFrame({
 
             "Nutrient": [
+
                 "Protein",
                 "Carbs",
                 "Sugar",
                 "Fat"
+
             ],
 
             "Value": [
-                protein_value,
-                carbs_value,
-                sugar_value,
-                fat_value
+
+                float(
+                    nutrition["protein"]
+                ),
+
+                float(
+                    nutrition["carbs"]
+                ),
+
+                float(
+                    nutrition["sugar"]
+                ),
+
+                float(
+                    nutrition["fat"]
+                )
+
             ]
         })
 
         st.subheader("📊 Nutrition Chart")
 
         st.bar_chart(
-            chart_df.set_index("Nutrient")
+            chart_df,
+            x="Nutrient",
+            y="Value"
         )
 
-    except Exception as e:
+    except:
 
         st.warning(
-            f"⚠ Unable to generate chart: {e}"
+            "⚠ Unable to generate chart"
         )
 
     # -----------------------------------
@@ -257,12 +361,23 @@ if uploaded_file is not None:
 
     try:
 
-        sugar = float(nutrition["sugar"])
-        protein = float(nutrition["protein"])
-        carbs = float(nutrition["carbs"])
+        sugar = float(
+            nutrition["sugar"]
+        )
 
-        # Sodium mg -> approximate salt
-        salt = float(nutrition["sodium"]) / 1000
+        protein = float(
+            nutrition["protein"]
+        )
+
+        carbs = float(
+            nutrition["carbs"]
+        )
+
+        sodium = float(
+            nutrition["sodium"]
+        )
+
+        salt = sodium / 1000
 
         result = analyze_nutrition(
             sugar,
@@ -271,16 +386,62 @@ if uploaded_file is not None:
             salt
         )
 
-        st.subheader("🚦 OCR Health Score")
+        st.subheader(
+            "🚦 OCR Health Score"
+        )
 
         score = result["score"]
+
         status = result["status"]
+
         color = result["color"]
 
         st.metric(
             label="Health Score",
             value=f"{score}/100"
         )
+
+        # -----------------------------------
+        # GRADE
+        # -----------------------------------
+
+        if score >= 90:
+
+            grade = "A"
+
+        elif score >= 75:
+
+            grade = "B"
+
+        elif score >= 60:
+
+            grade = "C"
+
+        elif score >= 40:
+
+            grade = "D"
+
+        else:
+
+            grade = "E"
+
+        st.write(f"🏆 Grade: {grade}")
+
+        # -----------------------------------
+        # AI RECOMMENDATIONS
+        # -----------------------------------
+
+        st.subheader(
+            "🤖 AI Recommendations"
+        )
+
+        for tip in result["advice"]:
+
+            st.write(tip)
+
+        # -----------------------------------
+        # HEALTH STATUS
+        # -----------------------------------
 
         if color == "green":
 
@@ -294,18 +455,8 @@ if uploaded_file is not None:
 
             st.error(f"🔴 {status}")
 
-        # -----------------------------------
-        # AI RECOMMENDATIONS
-        # -----------------------------------
-
-        st.subheader("🤖 AI Recommendations")
-
-        for tip in result["advice"]:
-
-            st.write(tip)
-
-    except Exception as e:
+    except:
 
         st.warning(
-            f"⚠ Unable to calculate health score: {e}"
+            "⚠ Unable to calculate health score"
         )

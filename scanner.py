@@ -1,7 +1,9 @@
-import cv2
+import platform
 
 try:
     from pyzbar.pyzbar import decode
+    import cv2
+
     PYZBAR_AVAILABLE = True
 
 except:
@@ -10,7 +12,13 @@ except:
 
 def scan_barcode():
 
+    # Disable scanner on Linux cloud
+    if platform.system() != "Windows":
+
+        return None
+
     if not PYZBAR_AVAILABLE:
+
         return None
 
     cap = cv2.VideoCapture(0)
