@@ -1,11 +1,17 @@
 import streamlit as st
 import pandas as pd
+import platform
 
 from product_api import fetch_product_data
 from analyzer import analyze_nutrition
-from scanner import scan_barcode
 from ocr_reader import extract_text
 from ocr_parser import extract_nutrition_values
+
+# Scanner only for local Windows
+if platform.system() == "Windows":
+    from scanner import scan_barcode
+else:
+    scan_barcode = None
 
 st.set_page_config(
     page_title="NutriScanAI",
@@ -16,34 +22,35 @@ st.set_page_config(
 st.title("🥗 NutriScanAI")
 st.write("AI-powered nutrition analysis using Barcode + OCR")
 
-# -----------------------------------
-# BARCODE PRODUCT SCANNER
-# -----------------------------------
+# -------------------------------
+# BARCODE SECTION
+# -------------------------------
 
 st.subheader("📦 Barcode Product Scanner")
 
 barcode = ""
 
-if st.button("📷 Start Barcode Scanner"):
-    scanned_barcode = scan_barcode()
+if scan_barcode is not None:
+    if st.button("📷 Start Barcode Scanner"):
+        scanned_barcode = scan_barcode()
 
-    if scanned_barcode:
-        barcode = scanned_barcode
-        st.success(f"✅ Scanned Barcode: {barcode}")
+        if scanned_barcode:
+            barcode = scanned_barcode
+            st.success(f"✅ Scanned Barcode: {barcode}")
+else:
+    st.info("📷 Camera barcode scanning is available only on local Windows. Use manual barcode input on cloud.")
 
 barcode = st.text_input("Enter Barcode", value=barcode)
 
-# -----------------------------------
-# FETCH PRODUCT DATA USING product_api.py
-# -----------------------------------
+# -------------------------------
+# PRODUCT API FETCH
+# -------------------------------
 
 if barcode:
-
     try:
         product_data = fetch_product_data(barcode)
 
         if product_data:
-
             product_name = product_data["name"]
             brand = product_data["brand"]
             ingredients = product_data["ingredients"]
@@ -60,8 +67,7 @@ if barcode:
             st.write("**Brand:**", brand)
 
             st.subheader("🧾 Ingredients")
-
-            if ingredients != "Ingredients not available":
+            if ingredients and ingredients != "Ingredients not available":
                 st.write(ingredients)
             else:
                 st.warning("⚠ Ingredients not available")
@@ -85,12 +91,9 @@ if barcode:
             st.bar_chart(nutrition_df, x="Nutrient", y="Value")
 
             if None in [sugar, protein, carbs, salt]:
-
                 st.warning("⚠ Nutrition information is missing for this product.")
                 st.info("📸 Please upload the product nutrition label image below for OCR analysis.")
-
             else:
-
                 result = analyze_nutrition(sugar, protein, carbs, salt)
 
                 st.subheader("🚦 Health Score")
@@ -109,7 +112,6 @@ if barcode:
                     st.error(f"🔴 {status}")
 
                 st.subheader("🤖 AI Recommendations")
-
                 for tip in result["advice"]:
                     st.write(tip)
 
@@ -147,9 +149,9 @@ if barcode:
     except Exception as e:
         st.error(f"❌ Error fetching product data: {e}")
 
-# -----------------------------------
+# -------------------------------
 # OCR SECTION
-# -----------------------------------
+# -------------------------------
 
 st.subheader("🧠 OCR Nutrition Extraction")
 
@@ -218,7 +220,6 @@ if uploaded_file is not None:
             st.error(f"🔴 {status}")
 
         st.subheader("🤖 AI Recommendations")
-
         for tip in result["advice"]:
             st.write(tip)
 
