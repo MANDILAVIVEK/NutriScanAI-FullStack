@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
 import pandas as pd
-import platform
 
 from analyzer import analyze_nutrition
 from scanner import scan_barcode
@@ -23,40 +22,39 @@ st.set_page_config(
 # -----------------------------------
 
 st.title("🥗 NutriScanAI")
-
-st.write(
-    "AI-powered nutrition analysis using Barcode + OCR"
-)
+st.write("AI-powered nutrition analysis using Barcode + OCR")
 
 # -----------------------------------
-# BARCODE VARIABLE
+# BARCODE PRODUCT SCANNER
 # -----------------------------------
+
+st.subheader("📦 Barcode Product Scanner")
 
 barcode = ""
 
 # -----------------------------------
-# BARCODE SCANNER
+# CAMERA BARCODE SCANNER
 # -----------------------------------
 
-if platform.system() == "Windows":
+if st.button("📷 Start Barcode Scanner"):
 
-    if st.button("📷 Scan Barcode"):
+    scanned_barcode = scan_barcode()
 
-        scanned_barcode = scan_barcode()
+    if scanned_barcode:
 
-        if scanned_barcode:
+        barcode = scanned_barcode
 
-            barcode = scanned_barcode
-
-            st.success(
-                f"Detected Barcode: {barcode}"
-            )
+        st.success(
+            f"✅ Scanned Barcode: {barcode}"
+        )
 
 # -----------------------------------
 # MANUAL BARCODE INPUT
 # -----------------------------------
 
-barcode = st.text_input("Enter Barcode")
+barcode = st.text_input(
+    "Enter Barcode"
+)
 
 # -----------------------------------
 # FETCH PRODUCT DATA
@@ -64,186 +62,298 @@ barcode = st.text_input("Enter Barcode")
 
 if barcode:
 
-    url = (
-        f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
-    )
+    try:
 
-    headers = {
-        "User-Agent": "NutriScanAI/1.0"
-    }
+        url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
 
-    response = requests.get(
-        url,
-        headers=headers
-    )
+        headers = {
+            "User-Agent": "NutriScanAI/1.0"
+        }
 
-    data = response.json()
-
-    # -----------------------------------
-    # PRODUCT FOUND
-    # -----------------------------------
-
-    if data["status"] == 1:
-
-        product = data["product"]
-
-        # Product details
-
-        product_name = product.get(
-            "product_name",
-            "N/A"
+        response = requests.get(
+            url,
+            headers=headers
         )
 
-        brand = product.get(
-            "brands",
-            "N/A"
-        )
-
-        # Nutrition values
-
-        nutriments = product.get(
-            "nutriments",
-            {}
-        )
-
-        sugar = nutriments.get("sugars_100g")
-
-        protein = nutriments.get("proteins_100g")
-
-        carbs = nutriments.get(
-            "carbohydrates_100g"
-        )
-
-        salt = nutriments.get("salt_100g")
+        data = response.json()
 
         # -----------------------------------
-        # PRODUCT INFO
+        # PRODUCT FOUND
         # -----------------------------------
 
-        st.subheader("📦 Product Information")
+        if data["status"] == 1:
 
-        st.write(
-            "**Product Name:**",
-            product_name
-        )
+            product = data["product"]
 
-        st.write(
-            "**Brand:**",
-            brand
-        )
+            # -----------------------------------
+            # PRODUCT DETAILS
+            # -----------------------------------
 
-        # -----------------------------------
-        # NUTRITION DATA
-        # -----------------------------------
-
-        st.subheader("🥗 Nutrition Data")
-
-        st.write(
-            "**Sugar:**",
-            sugar if sugar is not None
-            else "Data Missing"
-        )
-
-        st.write(
-            "**Protein:**",
-            protein if protein is not None
-            else "Data Missing"
-        )
-
-        st.write(
-            "**Carbohydrates:**",
-            carbs if carbs is not None
-            else "Data Missing"
-        )
-
-        st.write(
-            "**Salt:**",
-            salt if salt is not None
-            else "Data Missing"
-        )
-
-        # -----------------------------------
-        # HEALTH ANALYSIS
-        # -----------------------------------
-
-        if None not in [
-            sugar,
-            protein,
-            carbs,
-            salt
-        ]:
-
-            result = analyze_nutrition(
-                sugar,
-                protein,
-                carbs,
-                salt
+            product_name = product.get(
+                "product_name",
+                "N/A"
             )
 
-            st.subheader("🚦 Health Score")
+            brand = product.get(
+                "brands",
+                "N/A"
+            )
 
-            score = result["score"]
+            ingredients = product.get(
+                "ingredients_text",
+                "N/A"
+            )
 
-            status = result["status"]
+            nutriments = product.get(
+                "nutriments",
+                {}
+            )
 
-            color = result["color"]
+            sugar = nutriments.get(
+                "sugars_100g"
+            )
 
-            st.metric(
-                label="Health Score",
-                value=f"{score}/100"
+            protein = nutriments.get(
+                "proteins_100g"
+            )
+
+            carbs = nutriments.get(
+                "carbohydrates_100g"
+            )
+
+            salt = nutriments.get(
+                "salt_100g"
+            )
+
+            fat = nutriments.get(
+                "fat_100g"
             )
 
             # -----------------------------------
-            # GRADE SYSTEM
+            # PRODUCT INFORMATION
             # -----------------------------------
 
-            if score >= 90:
+            st.subheader("📦 Product Information")
 
-                grade = "A"
+            st.write(
+                "**Product Name:**",
+                product_name
+            )
 
-            elif score >= 75:
+            st.write(
+                "**Brand:**",
+                brand
+            )
 
-                grade = "B"
+            # -----------------------------------
+            # INGREDIENTS
+            # -----------------------------------
 
-            elif score >= 60:
+            st.subheader("🧾 Ingredients")
 
-                grade = "C"
+            if ingredients != "N/A":
 
-            elif score >= 40:
-
-                grade = "D"
+                st.write(ingredients)
 
             else:
 
-                grade = "E"
-
-            st.write(f"🏆 Grade: {grade}")
+                st.warning(
+                    "⚠ Ingredients not available"
+                )
 
             # -----------------------------------
-            # STATUS COLOR
+            # NUTRITION TABLE
             # -----------------------------------
 
-            if color == "green":
+            st.subheader("🥗 Nutrition Data")
 
-                st.success(f"🟢 {status}")
+            nutrition_df = pd.DataFrame({
 
-            elif color == "orange":
+                "Nutrient": [
+                    "Sugar",
+                    "Protein",
+                    "Carbs",
+                    "Fat",
+                    "Salt"
+                ],
 
-                st.warning(f"🟡 {status}")
+                "Value": [
+
+                    sugar if sugar is not None else 0,
+
+                    protein if protein is not None else 0,
+
+                    carbs if carbs is not None else 0,
+
+                    fat if fat is not None else 0,
+
+                    salt if salt is not None else 0
+                ]
+            })
+
+            st.dataframe(
+                nutrition_df,
+                use_container_width=True
+            )
+
+            # -----------------------------------
+            # NUTRITION CHART
+            # -----------------------------------
+
+            st.subheader("📊 Nutrition Chart")
+
+            st.bar_chart(
+                nutrition_df,
+                x="Nutrient",
+                y="Value"
+            )
+
+            # -----------------------------------
+            # CHECK IF DATA EXISTS
+            # -----------------------------------
+
+            if None in [sugar, protein, carbs, salt]:
+
+                st.warning(
+                    "⚠ Nutrition information is missing for this product."
+                )
+
+                st.info(
+                    "📸 Please upload the product nutrition label image below for OCR analysis."
+                )
 
             else:
 
-                st.error(f"🔴 {status}")
+                # -----------------------------------
+                # HEALTH ANALYSIS
+                # -----------------------------------
+
+                result = analyze_nutrition(
+                    sugar,
+                    protein,
+                    carbs,
+                    salt
+                )
+
+                st.subheader("🚦 Health Score")
+
+                score = result["score"]
+                status = result["status"]
+                color = result["color"]
+
+                st.metric(
+                    label="Health Score",
+                    value=f"{score}/100"
+                )
+
+                if color == "green":
+
+                    st.success(
+                        f"🟢 {status}"
+                    )
+
+                elif color == "orange":
+
+                    st.warning(
+                        f"🟡 {status}"
+                    )
+
+                else:
+
+                    st.error(
+                        f"🔴 {status}"
+                    )
+
+                # -----------------------------------
+                # AI RECOMMENDATIONS
+                # -----------------------------------
+
+                st.subheader("🤖 AI Recommendations")
+
+                for tip in result["advice"]:
+
+                    st.write(tip)
+
+                # -----------------------------------
+                # DIET SUITABILITY
+                # -----------------------------------
+
+                st.subheader("🥗 Diet Suitability")
+
+                if sugar < 5 and fat < 10:
+
+                    st.success(
+                        "✅ Suitable for Weight Loss Diet"
+                    )
+
+                else:
+
+                    st.warning(
+                        "⚠ Not ideal for Weight Loss"
+                    )
+
+                if protein > 10:
+
+                    st.success(
+                        "💪 Good for Muscle Building"
+                    )
+
+                else:
+
+                    st.warning(
+                        "⚠ Low protein for fitness goals"
+                    )
+
+                # -----------------------------------
+                # ALLERGY DETECTION
+                # -----------------------------------
+
+                st.subheader("⚠ Allergy Detection")
+
+                allergy_keywords = [
+
+                    "milk",
+                    "soy",
+                    "peanut",
+                    "nuts",
+                    "gluten",
+                    "wheat"
+                ]
+
+                found_allergies = []
+
+                ingredients_lower = ingredients.lower()
+
+                for item in allergy_keywords:
+
+                    if item in ingredients_lower:
+
+                        found_allergies.append(item)
+
+                if found_allergies:
+
+                    st.error(
+                        "Contains: " +
+                        ", ".join(found_allergies)
+                    )
+
+                else:
+
+                    st.success(
+                        "✅ No common allergens detected"
+                    )
 
         else:
 
-            st.warning(
-                "⚠ Some nutrition data is missing"
+            st.error(
+                "❌ Product not found"
             )
 
-    else:
+    except:
 
-        st.error("❌ Product not found")
+        st.error(
+            "❌ Error fetching product data"
+        )
 
 # -----------------------------------
 # OCR SECTION
@@ -261,8 +371,6 @@ uploaded_file = st.file_uploader(
 # -----------------------------------
 
 if uploaded_file is not None:
-
-    # Save uploaded image
 
     with open(
         "uploaded_label.jpg",
@@ -290,16 +398,12 @@ if uploaded_file is not None:
     st.text(text)
 
     # -----------------------------------
-    # PARSE NUTRITION
+    # PARSE NUTRITION VALUES
     # -----------------------------------
 
-    nutrition = extract_nutrition_values(
-        text
-    )
+    nutrition = extract_nutrition_values(text)
 
-    st.subheader(
-        "🧪 Extracted Nutrition Values"
-    )
+    st.subheader("🧪 Extracted Nutrition Values")
 
     st.write(nutrition)
 
@@ -312,32 +416,18 @@ if uploaded_file is not None:
         chart_df = pd.DataFrame({
 
             "Nutrient": [
-
                 "Protein",
                 "Carbs",
                 "Sugar",
                 "Fat"
-
             ],
 
             "Value": [
 
-                float(
-                    nutrition["protein"]
-                ),
-
-                float(
-                    nutrition["carbs"]
-                ),
-
-                float(
-                    nutrition["sugar"]
-                ),
-
-                float(
-                    nutrition["fat"]
-                )
-
+                float(nutrition["protein"]),
+                float(nutrition["carbs"]),
+                float(nutrition["sugar"]),
+                float(nutrition["fat"])
             ]
         })
 
@@ -386,14 +476,10 @@ if uploaded_file is not None:
             salt
         )
 
-        st.subheader(
-            "🚦 OCR Health Score"
-        )
+        st.subheader("🚦 OCR Health Score")
 
         score = result["score"]
-
         status = result["status"]
-
         color = result["color"]
 
         st.metric(
@@ -401,62 +487,43 @@ if uploaded_file is not None:
             value=f"{score}/100"
         )
 
-        # -----------------------------------
-        # GRADE
-        # -----------------------------------
+        if color == "green":
 
-        if score >= 90:
+            st.success(
+                f"🟢 {status}"
+            )
 
-            grade = "A"
+        elif color == "orange":
 
-        elif score >= 75:
-
-            grade = "B"
-
-        elif score >= 60:
-
-            grade = "C"
-
-        elif score >= 40:
-
-            grade = "D"
+            st.warning(
+                f"🟡 {status}"
+            )
 
         else:
 
-            grade = "E"
-
-        st.write(f"🏆 Grade: {grade}")
+            st.error(
+                f"🔴 {status}"
+            )
 
         # -----------------------------------
         # AI RECOMMENDATIONS
         # -----------------------------------
 
-        st.subheader(
-            "🤖 AI Recommendations"
-        )
+        st.subheader("🤖 AI Recommendations")
 
         for tip in result["advice"]:
 
             st.write(tip)
-
-        # -----------------------------------
-        # HEALTH STATUS
-        # -----------------------------------
-
-        if color == "green":
-
-            st.success(f"🟢 {status}")
-
-        elif color == "orange":
-
-            st.warning(f"🟡 {status}")
-
-        else:
-
-            st.error(f"🔴 {status}")
 
     except:
 
         st.warning(
             "⚠ Unable to calculate health score"
         )
+
+# -----------------------------------
+# FOOTER
+# -----------------------------------
+
+st.markdown("---")
+st.caption("Made with Streamlit ❤️")

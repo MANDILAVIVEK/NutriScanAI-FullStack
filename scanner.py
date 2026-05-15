@@ -1,120 +1,63 @@
 import cv2
-
-try:
-    from pyzbar.pyzbar import decode
-
-    PYZBAR_AVAILABLE = True
-
-except:
-
-    PYZBAR_AVAILABLE = False
-
+from pyzbar.pyzbar import decode
+import streamlit as st
 
 def scan_barcode():
 
-    if not PYZBAR_AVAILABLE:
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
+    if not cap.isOpened():
+        st.error("❌ Unable to access camera")
         return None
 
-    cap = cv2.VideoCapture(0)
-
-    # Higher resolution
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
-
     barcode_data = None
+
+    stframe = st.empty()
 
     while True:
 
         success, frame = cap.read()
 
         if not success:
+            st.error("❌ Failed to read camera")
             break
 
-        # -----------------------------------
-        # IMAGE PREPROCESSING
-        # -----------------------------------
+        for barcode in decode(frame):
 
-        gray = cv2.cvtColor(
-            frame,
-            cv2.COLOR_BGR2GRAY
-        )
+            barcode_data = barcode.data.decode("utf-8")
 
-        gray = cv2.GaussianBlur(
-            gray,
-            (5, 5),
-            0
-        )
+            pts = barcode.polygon
 
-        # -----------------------------------
-        # BARCODE DETECTION
-        # -----------------------------------
+            if len(pts) == 4:
 
-        detected_barcodes = decode(gray)
+                pts = [(pt.x, pt.y) for pt in pts]
 
-        for barcode in detected_barcodes:
+                for i in range(4):
+                    cv2.line(
+                        frame,
+                        pts[i],
+                        pts[(i + 1) % 4],
+                        (0, 255, 0),
+                        2
+                    )
 
-            barcode_data = barcode.data.decode(
-                "utf-8"
-            )
-
-            x, y, w, h = barcode.rect
-
-            # Draw rectangle
-            cv2.rectangle(
-                frame,
-                (x, y),
-                (x + w, y + h),
-                (0, 255, 0),
-                3
-            )
-
-            # Display barcode
             cv2.putText(
                 frame,
                 barcode_data,
-                (x, y - 10),
+                (50, 50),
                 cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
+                1,
                 (0, 255, 0),
                 2
             )
 
-            break
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-        # -----------------------------------
-        # UI TEXT
-        # -----------------------------------
+        stframe.image(frame, channels="RGB")
 
-        cv2.putText(
-            frame,
-            "Show Barcode to Camera",
-            (20, 40),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (255, 0, 0),
-            2
-        )
-
-        cv2.imshow(
-            "NutriScanAI Barcode Scanner",
-            frame
-        )
-
-        # Stop if barcode found
         if barcode_data:
             break
 
-        # Press Q to quit
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
     cap.release()
-
-    try:
-        cv2.destroyAllWindows()
-
-    except:
-        pass
 
     return barcode_data
