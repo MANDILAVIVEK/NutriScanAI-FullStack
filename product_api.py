@@ -26,7 +26,10 @@ def fetch_product_data(barcode):
         return {
             "name": product.get("product_name", "Unknown"),
             "brand": product.get("brands", "Unknown"),
-            "ingredients": product.get("ingredients_text", "Ingredients not available"),
+            "ingredients": product.get(
+                "ingredients_text",
+                "Ingredients not available"
+            ),
             "nutriments": product.get("nutriments", {}),
             "image_url": product.get("image_url")
         }

@@ -83,7 +83,7 @@ if barcode:
         brand = product_data["brand"]
         ingredients = product_data["ingredients"]
         nutriments = product_data["nutriments"]
-        image_url = product_data["image_url"]
+        image_url = product_data.get("image_url")
 
         sugar = nutriments.get("sugars_100g")
         protein = nutriments.get("proteins_100g")
