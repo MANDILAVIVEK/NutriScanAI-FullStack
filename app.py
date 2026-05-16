@@ -6,13 +6,14 @@ from product_api import fetch_product_data
 from analyzer import analyze_nutrition
 from ocr_reader import extract_text
 from ocr_parser import extract_nutrition_values
+from ingredient_analyzer import analyze_ingredients
 from barcode_image_scanner import scan_barcode_from_image
 
-# Scanner only for local Windows
 if platform.system() == "Windows":
     from scanner import scan_barcode
 else:
     scan_barcode = None
+
 
 st.set_page_config(
     page_title="NutriScanAI",
@@ -65,7 +66,6 @@ if barcode_image is not None:
     if detected_barcode:
         st.success(f"✅ Barcode detected: {detected_barcode}")
         barcode = detected_barcode
-
     else:
         st.error("❌ Could not detect barcode. Try a clearer barcode image.")
 
@@ -83,6 +83,7 @@ if barcode:
         brand = product_data["brand"]
         ingredients = product_data["ingredients"]
         nutriments = product_data["nutriments"]
+        image_url = product_data["image_url"]
 
         sugar = nutriments.get("sugars_100g")
         protein = nutriments.get("proteins_100g")
@@ -91,6 +92,10 @@ if barcode:
         fat = nutriments.get("fat_100g")
 
         st.subheader("📦 Product Information")
+
+        if image_url:
+            st.image(image_url, width=250)
+
         st.write("**Product Name:**", product_name)
         st.write("**Brand:**", brand)
 
@@ -100,6 +105,13 @@ if barcode:
             st.write(ingredients)
         else:
             st.warning("⚠ Ingredients not available")
+
+        st.subheader("🔍 Ingredient Intelligence")
+
+        ingredient_analysis = analyze_ingredients(ingredients)
+
+        for item in ingredient_analysis:
+            st.write(item)
 
         st.subheader("🥗 Nutrition Data")
 
@@ -135,6 +147,7 @@ if barcode:
             color = result["color"]
 
             st.metric("Health Score", f"{score}/100")
+            st.progress(score / 100)
 
             if color == "green":
                 st.success(f"🟢 {status}")
@@ -147,6 +160,21 @@ if barcode:
 
             for tip in result["advice"]:
                 st.write(tip)
+
+            st.subheader("🏷 Product Category")
+
+            if protein > 10:
+                st.success("💪 Gym Friendly")
+            else:
+                st.warning("⚠ Low Protein Product")
+
+            if sugar > 15:
+                st.warning("🍭 High Sugar Snack")
+            else:
+                st.success("✅ Low Sugar Product")
+
+            if fat is not None and fat < 5:
+                st.success("🥗 Low Fat Product")
 
             st.subheader("🥗 Diet Suitability")
 
@@ -219,11 +247,30 @@ if uploaded_file is not None:
 
     st.subheader("✍️ Correct / Fill Nutrition Values")
 
-    protein_input = st.text_input("Protein (g)", value="" if nutrition.get("protein") == "Not Found" else nutrition.get("protein", ""))
-    carbs_input = st.text_input("Carbohydrates (g)", value="" if nutrition.get("carbs") == "Not Found" else nutrition.get("carbs", ""))
-    sugar_input = st.text_input("Sugar (g)", value="" if nutrition.get("sugar") == "Not Found" else nutrition.get("sugar", ""))
-    fat_input = st.text_input("Fat (g)", value="" if nutrition.get("fat") == "Not Found" else nutrition.get("fat", ""))
-    sodium_input = st.text_input("Sodium (mg)", value="" if nutrition.get("sodium") == "Not Found" else nutrition.get("sodium", ""))
+    protein_input = st.text_input(
+        "Protein (g)",
+        value="" if nutrition.get("protein") == "Not Found" else nutrition.get("protein", "")
+    )
+
+    carbs_input = st.text_input(
+        "Carbohydrates (g)",
+        value="" if nutrition.get("carbs") == "Not Found" else nutrition.get("carbs", "")
+    )
+
+    sugar_input = st.text_input(
+        "Sugar (g)",
+        value="" if nutrition.get("sugar") == "Not Found" else nutrition.get("sugar", "")
+    )
+
+    fat_input = st.text_input(
+        "Fat (g)",
+        value="" if nutrition.get("fat") == "Not Found" else nutrition.get("fat", "")
+    )
+
+    sodium_input = st.text_input(
+        "Sodium (mg)",
+        value="" if nutrition.get("sodium") == "Not Found" else nutrition.get("sodium", "")
+    )
 
     if st.button("✅ Analyze Corrected Values"):
 
@@ -253,6 +300,7 @@ if uploaded_file is not None:
             color = result["color"]
 
             st.metric("Health Score", f"{score}/100")
+            st.progress(score / 100)
 
             if color == "green":
                 st.success(f"🟢 {status}")

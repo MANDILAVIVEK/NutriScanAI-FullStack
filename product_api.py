@@ -1,17 +1,15 @@
 import requests
 
+
 def fetch_product_data(barcode):
 
-    url = (
-        f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
-    )
+    url = f"https://world.openfoodfacts.org/api/v0/product/{barcode}.json"
 
     headers = {
         "User-Agent": "NutriScanAI/1.0"
     }
 
     try:
-
         response = requests.get(
             url,
             headers=headers,
@@ -26,28 +24,12 @@ def fetch_product_data(barcode):
         product = data.get("product", {})
 
         return {
-
-            "name": product.get(
-                "product_name",
-                "Unknown"
-            ),
-
-            "brand": product.get(
-                "brands",
-                "Unknown"
-            ),
-
-            "ingredients": product.get(
-                "ingredients_text",
-                "Ingredients not available"
-            ),
-
-            "nutriments": product.get(
-                "nutriments",
-                {}
-            )
+            "name": product.get("product_name", "Unknown"),
+            "brand": product.get("brands", "Unknown"),
+            "ingredients": product.get("ingredients_text", "Ingredients not available"),
+            "nutriments": product.get("nutriments", {}),
+            "image_url": product.get("image_url")
         }
 
     except:
-
         return None
