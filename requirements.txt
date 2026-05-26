@@ -1,8 +1,0 @@
-streamlit
-pandas
-requests
-pytesseract
-Pillow
-numpy
-opencv-python-headless
-pyzbar
