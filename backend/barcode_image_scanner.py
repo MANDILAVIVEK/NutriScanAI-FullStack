@@ -1,28 +1,13 @@
-from pyzbar.pyzbar import decode
-from PIL import Image, ImageEnhance, ImageFilter
-
+import cv2
 
 def scan_barcode_from_image(image_path):
-    image = Image.open(image_path)
+    img = cv2.imread(image_path)
 
-    test_images = []
+    detector = cv2.barcode.BarcodeDetector()
 
-    test_images.append(image)
+    ok, decoded_info, decoded_type, points = detector.detectAndDecode(img)
 
-    gray = image.convert("L")
-    test_images.append(gray)
-
-    test_images.append(ImageEnhance.Contrast(gray).enhance(2))
-    test_images.append(ImageEnhance.Sharpness(gray).enhance(2))
-
-    w, h = gray.size
-    test_images.append(gray.resize((w * 2, h * 2)))
-    test_images.append(gray.resize((w * 3, h * 3)).filter(ImageFilter.SHARPEN))
-
-    for img in test_images:
-        barcodes = decode(img)
-
-        if barcodes:
-            return barcodes[0].data.decode("utf-8")
+    if ok and decoded_info:
+        return decoded_info[0]
 
     return None
