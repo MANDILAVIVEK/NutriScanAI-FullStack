@@ -1,5 +1,138 @@
-body {
-  margin: 0;
+.app {
+  min-height: 100vh;
+  background: #f3f7f4;
   font-family: Arial, sans-serif;
-  background: #f8faf8;
+  color: #172033;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 60px;
+  background: white;
+  box-shadow: 0 2px 10px #00000010;
+}
+
+.navbar h1 {
+  color: #07843f;
+  font-size: 34px;
+}
+
+.navbar a {
+  margin-left: 25px;
+  text-decoration: none;
+  color: #172033;
+  font-weight: 600;
+}
+
+.hero {
+  padding: 60px;
+  background: linear-gradient(120deg, #ecfff3, #ffffff);
+}
+
+.hero h2 {
+  font-size: 52px;
+  max-width: 700px;
+}
+
+.hero p {
+  font-size: 20px;
+  max-width: 850px;
+}
+
+.card {
+  margin: 35px auto;
+  padding: 35px;
+  max-width: 1200px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px #00000015;
+}
+
+.card h2 {
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 16px;
+  margin: 10px 0 18px;
+  border: 1px solid #cfcfcf;
+  border-radius: 14px;
+  font-size: 18px;
+}
+
+button {
+  padding: 16px 24px;
+  border: none;
+  border-radius: 14px;
+  background: #059447;
+  color: white;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+.blue {
+  background: #174ea6;
+}
+
+.result {
+  margin-top: 30px;
+  padding: 25px;
+  background: #f7fff9;
+  border: 1px solid #ccebd6;
+  border-radius: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.box {
+  background: #f1f5f3;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 1px #e1e1e1;
+}
+
+.box h4 {
+  margin: 0 0 10px;
+  color: #067a3a;
+}
+
+.box p {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.features {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 30px;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #111827;
+  color: #d1fae5;
+  padding: 20px;
+  border-radius: 14px;
+  overflow-x: auto;
+}
+
+footer {
+  text-align: center;
+  padding: 30px;
+  background: #0f172a;
+  color: white;
 }
