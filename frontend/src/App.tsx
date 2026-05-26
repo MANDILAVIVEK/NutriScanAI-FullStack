@@ -2,7 +2,9 @@ import { useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import "./App.css";
 
-const API = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+const API =
+  import.meta.env.VITE_API_URL ||
+  "https://nutriscanai-fullstack.onrender.com";
 
 function App() {
   const [barcode, setBarcode] = useState("");
@@ -25,7 +27,7 @@ function App() {
       const res = await fetch(`${API}/product/${finalCode}`);
       const data = await res.json();
       setProduct(data);
-    } catch (error) {
+    } catch {
       alert("Backend not connected");
     }
 
@@ -53,7 +55,9 @@ function App() {
     }
   };
 
-  const uploadBarcodeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadBarcodeImage = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -106,6 +110,7 @@ function App() {
     <div className="app">
       <nav className="navbar">
         <h1>🥗 NutriScanAI</h1>
+
         <div>
           <a href="#barcode">Barcode</a>
           <a href="#ocr">Nutrition OCR</a>
@@ -114,12 +119,20 @@ function App() {
       </nav>
 
       <section className="hero">
-        <div>
+        <div className="hero-text">
           <h2>AI Nutrition Intelligence Platform</h2>
+
           <p>
             Scan barcodes, analyze ingredients, detect hidden sugars, and get
             AI-powered health recommendations instantly.
           </p>
+        </div>
+
+        <div className="hero-image">
+          <img
+            src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=900"
+            alt="Healthy food"
+          />
         </div>
       </section>
 
@@ -137,20 +150,32 @@ function App() {
         </button>
 
         <h3>📷 Live Camera Scanner</h3>
+
         <button className="blue" onClick={startCameraScanner}>
           Start Camera Scanner
         </button>
+
         <div id="reader"></div>
 
         <h3>🖼 Upload Barcode Image</h3>
+
         <input type="file" accept="image/*" onChange={uploadBarcodeImage} />
 
         {product && (
           <div className="result">
             <h2>Product Summary</h2>
-            <p><b>Product:</b> {product?.product?.name || "N/A"}</p>
-            <p><b>Brand:</b> {product?.product?.brand || "N/A"}</p>
-            <p><b>Status:</b> {product?.status}</p>
+
+            <p>
+              <b>Product:</b> {product?.product?.name || "N/A"}
+            </p>
+
+            <p>
+              <b>Brand:</b> {product?.product?.brand || "N/A"}
+            </p>
+
+            <p>
+              <b>Status:</b> {product?.status}
+            </p>
 
             {analysis && (
               <>
@@ -161,6 +186,7 @@ function App() {
             )}
 
             <h3>🥗 Nutrition Data</h3>
+
             <div className="grid">
               <Box title="Sugar" value={n.sugars_100g} unit="g" />
               <Box title="Protein" value={n.proteins_100g} unit="g" />
@@ -170,14 +196,17 @@ function App() {
             </div>
 
             <h3>🧾 Ingredients</h3>
+
             <p>{product?.product?.ingredients || "Ingredients not available"}</p>
 
             <h3>🔍 Ingredient Intelligence</h3>
+
             {product?.ingredient_analysis?.map((x: string, i: number) => (
               <p key={i}>{x}</p>
             ))}
 
             <h3>🤖 AI Recommendations</h3>
+
             {analysis?.advice?.map((x: string, i: number) => (
               <p key={i}>{x}</p>
             ))}
@@ -189,6 +218,7 @@ function App() {
         <h2>🧠 OCR Nutrition Extraction</h2>
 
         <input type="file" accept="image/*" onChange={uploadOCR} />
+
         <p>Upload only the nutrition table for better OCR accuracy.</p>
 
         {ocr && (
@@ -200,11 +230,16 @@ function App() {
               <Box title="Carbs" value={ocr.nutrition?.carbs} unit="g" />
               <Box title="Sugar" value={ocr.nutrition?.sugar} unit="g" />
               <Box title="Fat" value={ocr.nutrition?.fat} unit="g" />
-              <Box title="Saturated Fat" value={ocr.nutrition?.saturated_fat} unit="g" />
+              <Box
+                title="Saturated Fat"
+                value={ocr.nutrition?.saturated_fat}
+                unit="g"
+              />
               <Box title="Sodium" value={ocr.nutrition?.sodium} unit="mg" />
             </div>
 
             <h3>📄 OCR Extracted Text</h3>
+
             <pre>{ocr.ocr_text}</pre>
           </div>
         )}
@@ -212,6 +247,7 @@ function App() {
 
       <section id="features" className="features">
         <h2>🚀 Upcoming Features</h2>
+
         <div className="grid">
           <Box title="⌚ Health App Sync" value="Samsung Health integration" />
           <Box title="🧠 AI Personalization" value="Personalized insights" />
@@ -229,7 +265,10 @@ function Box({ title, value, unit = "" }: any) {
   return (
     <div className="box">
       <h4>{title}</h4>
-      <p>{value || "N/A"}{value ? unit : ""}</p>
+      <p>
+        {value || "N/A"}
+        {value ? unit : ""}
+      </p>
     </div>
   );
 }
