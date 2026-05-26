@@ -1,88 +1,62 @@
-# NutriScanAI 🥗
+# 🥗 NutriScanAI FullStack
 
-NutriScanAI is an AI-powered nutrition analysis application that scans product barcodes and provides health insights using nutrition data.
+NutriScanAI is an AI-powered nutrition intelligence platform that analyzes packaged food products using barcode scanning, OCR nutrition label extraction, ingredient intelligence, and health scoring.
 
----
+## 🚀 Features
 
-## Features
+- 📦 Barcode product lookup
+- 📷 Live camera barcode scanner
+- 🖼 Barcode image upload
+- 🧠 OCR nutrition label extraction
+- ✍️ Manual nutrition correction
+- 📊 Nutrition chart visualization
+- 🚦 Health score calculation
+- 🤖 AI nutrition recommendations
+- 🧾 Ingredient analysis
+- ⚠ Allergy detection
+- 🏷 Product category detection
+- 🥗 Diet suitability analysis
+- 🤖 Gemini AI ingredient explanation
 
--  Barcode scanning
--  Open Food Facts API integration
--  Nutrition analysis
--  Health recommendations
--  Missing nutrition data detection
--  Streamlit web application
--  GitHub integration
+## 🛠 Tech Stack
 
----
+### Frontend
+- React
+- TypeScript
+- Tailwind CSS
+- Vite
+- Recharts
+- html5-qrcode
 
-##  Tech Stack
-
+### Backend
+- FastAPI
 - Python
-- Streamlit
 - OpenCV
-- pyzbar
-- Requests
+- Tesseract OCR
+- Pyzbar
+- Open Food Facts API
+- Gemini AI API
 
----
-
-## Project Structure
+## 📁 Project Structure
 
 ```text
-NutriScanAI/
+NutriScanAI-FullStack/
 │
-├── app.py
-├── api_fetch.py
-├── analyzer.py
-├── scanner.py
-├── requirements.txt
+├── backend/
+│   ├── main.py
+│   ├── analyzer.py
+│   ├── product_api.py
+│   ├── ocr_reader.py
+│   ├── ocr_parser.py
+│   ├── barcode_image_scanner.py
+│   ├── ingredient_analyzer.py
+│   ├── ai_ingredient_explainer.py
+│   └── requirements.txt
+│
+├── frontend/
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+│
 ├── README.md
-└── assets/
-```
-
----
-
-## ▶ Run the Project
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run Streamlit app:
-
-```bash
-streamlit run app.py
-```
-
----
-
-## Current Workflow
-
-```text
-Barcode
-   ↓
-API Fetch
-   ↓
-Nutrition Extraction
-   ↓
-Health Analysis
-```
-
----
-
-## 🔮 Future Improvements
-
--  Webcam barcode scanning
--  OCR nutrition label extraction
--  Nutrition charts
--  Health score meter
--  AI recommendation system
--  Cloud deployment
-
----
-
-## 📌 GitHub Repository
-
-https://github.com/MANDILAVIVEK/NutriScanAI
+└── .gitignore
