@@ -3,6 +3,7 @@ import pytesseract
 from PIL import Image
 import platform
 import os
+import uuid
 
 if platform.system() == "Windows":
     pytesseract.pytesseract.tesseract_cmd = (
@@ -37,7 +38,7 @@ def extract_text(image_path):
         cv2.THRESH_BINARY + cv2.THRESH_OTSU,
     )[1]
 
-    processed_path = "processed_image.png"
+    processed_path = f"processed_{uuid.uuid4().hex}.png"
     cv2.imwrite(processed_path, gray)
 
     text = pytesseract.image_to_string(Image.open(processed_path))
