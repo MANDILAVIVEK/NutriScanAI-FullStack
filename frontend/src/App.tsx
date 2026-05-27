@@ -9,6 +9,7 @@ function App() {
   const [product, setProduct] = useState<any>(null);
   const [ocr, setOcr] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const analyzeProduct = async (code?: string) => {
@@ -106,8 +107,7 @@ function App() {
     <div className="app">
       <nav className="navbar">
         <h1>🥗 NutriScanAI</h1>
-
-        <div>
+        <div className="nav-links">
           <a href="#barcode">Barcode</a>
           <a href="#ocr">Nutrition OCR</a>
           <a href="#features">Features</a>
@@ -131,70 +131,76 @@ function App() {
         </div>
       </section>
 
-      <section id="barcode" className="card">
-        <h2>📦 Barcode Product Scanner</h2>
+      <section id="barcode" className="scanner-card">
+        <div className="scanner-left">
+          <h2>📦 Barcode Product Scanner</h2>
 
-        <input
-          value={barcode}
-          onChange={(e) => setBarcode(e.target.value)}
-          placeholder="Enter Barcode"
-        />
+          <input
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            placeholder="Enter Barcode"
+          />
 
-        <button onClick={() => analyzeProduct()}>
-          {loading ? "Analyzing..." : "🔍 Analyze Product"}
-        </button>
+          <button onClick={() => analyzeProduct()}>
+            {loading ? "Analyzing..." : "🔍 Analyze Product"}
+          </button>
 
-        <h3>📷 Live Camera Scanner</h3>
+          <h3>📷 Live Camera Scanner</h3>
 
-        <button className="blue" onClick={startCameraScanner}>
-          Start Camera Scanner
-        </button>
+          <button className="blue" onClick={startCameraScanner}>
+            Start Camera Scanner
+          </button>
 
-        <div id="reader"></div>
+          <div id="reader"></div>
 
-        <h3>🖼 Upload Barcode Image</h3>
+          <h3>🖼 Upload Barcode Image</h3>
 
-        <input type="file" accept="image/*" onChange={uploadBarcodeImage} />
+          <input type="file" accept="image/*" onChange={uploadBarcodeImage} />
+        </div>
 
-        {product && (
-          <div className="product-layout">
-            <div className="product-image-box">
-              <img
-                src={
-                  product?.product?.image_url ||
-                  "https://via.placeholder.com/300x300?text=No+Image"
-                }
-                alt={product?.product?.name || "Product"}
-                className="product-image"
-              />
-            </div>
+        <div className="scanner-right">
+          <h2>Product Summary</h2>
 
-            <div className="product-info-box">
-              <h2>Product Summary</h2>
+          {!product && (
+            <p>Enter, scan, or upload a barcode to view product details.</p>
+          )}
 
-              <p>
-                <b>Product:</b> {product?.product?.name || "N/A"}
-              </p>
+          {product && (
+            <>
+              <div className="summary-top">
+                <img
+                  src={
+                    product?.product?.image_url ||
+                    "https://via.placeholder.com/250x250?text=No+Image"
+                  }
+                  alt="Product"
+                  className="summary-img"
+                />
 
-              <p>
-                <b>Brand:</b> {product?.product?.brand || "N/A"}
-              </p>
+                <div className="summary-info">
+                  <p>
+                    <b>Product:</b> {product?.product?.name || "N/A"}
+                  </p>
+                  <p>
+                    <b>Brand:</b> {product?.product?.brand || "N/A"}
+                  </p>
+                  <p>
+                    <b>Status:</b> {product?.status}
+                  </p>
 
-              <p>
-                <b>Status:</b> {product?.status}
-              </p>
+                  {product?.message && (
+                    <p className="warning">⚠ {product.message}</p>
+                  )}
 
-              {product?.message && (
-                <p className="warning">⚠ {product.message}</p>
-              )}
-
-              {analysis && (
-                <>
-                  <h3>🚦 Health Score</h3>
-                  <h1>{analysis.score}/100</h1>
-                  <p>{analysis.status}</p>
-                </>
-              )}
+                  {analysis && (
+                    <>
+                      <h3>🚦 Health Score</h3>
+                      <h1>{analysis.score}/100</h1>
+                      <p>{analysis.status}</p>
+                    </>
+                  )}
+                </div>
+              </div>
 
               <h3>🥗 Nutrition Data</h3>
 
@@ -222,7 +228,9 @@ function App() {
               ))}
 
               <h3>🧾 Ingredients</h3>
-              <p>{product?.product?.ingredients || "Ingredients not available"}</p>
+              <p>
+                {product?.product?.ingredients || "Ingredients not available"}
+              </p>
 
               <h3>🔍 Ingredient Intelligence</h3>
               {product?.ingredient_analysis?.map((x: string, i: number) => (
@@ -233,9 +241,9 @@ function App() {
               {analysis?.advice?.map((x: string, i: number) => (
                 <p key={i}>{x}</p>
               ))}
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </section>
 
       <section id="ocr" className="card">
