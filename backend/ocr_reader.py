@@ -7,17 +7,16 @@ from google import genai
 
 load_dotenv()
 
-client = genai.Client(
-    api_key=os.getenv("GENAI_API_KEY")
-)
-
 
 def extract_text(image_path):
-    if not os.getenv("GENAI_API_KEY"):
+    api_key = os.getenv("GENAI_API_KEY")
+
+    if not api_key:
         return "GENAI_API_KEY missing"
 
-    mime_type, _ = mimetypes.guess_type(image_path)
+    client = genai.Client(api_key=api_key)
 
+    mime_type, _ = mimetypes.guess_type(image_path)
     if not mime_type:
         mime_type = "image/jpeg"
 
@@ -46,7 +45,6 @@ def extract_text(image_path):
                     prompt,
                 ],
             )
-
             return response.text
 
         except Exception as e:
