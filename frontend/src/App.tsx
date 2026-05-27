@@ -2,9 +2,8 @@ import { useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import "./App.css";
 
-const API =
-  import.meta.env.VITE_API_URL ||
-  "https://nutriscanai-fullstack.onrender.com";
+const API = "https://nutriscanai-fullstack.onrender.com";
+
 
 function App() {
   const [barcode, setBarcode] = useState("");
