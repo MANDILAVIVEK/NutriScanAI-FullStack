@@ -17,6 +17,7 @@ app = FastAPI()
 # =========================
 # CORS FIX FOR VERCEL
 # =========================
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
