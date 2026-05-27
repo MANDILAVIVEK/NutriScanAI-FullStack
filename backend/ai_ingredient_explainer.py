@@ -4,11 +4,15 @@ from google import genai
 
 load_dotenv()
 
-client = genai.Client(
-    api_key=os.getenv("GENAI_API_KEY")
-)
 
 def explain_ingredients(ingredients):
+
+    api_key = os.getenv("GENAI_API_KEY")
+
+    if not api_key:
+        return "GENAI_API_KEY missing"
+
+    client = genai.Client(api_key=api_key)
 
     if not ingredients:
         return "Ingredients unavailable"
@@ -27,9 +31,13 @@ def explain_ingredients(ingredients):
     Recommendation:
     """
 
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
 
-    return response.text
+        return response.text
+
+    except Exception as e:
+        return f"AI service unavailable: {str(e)}"
