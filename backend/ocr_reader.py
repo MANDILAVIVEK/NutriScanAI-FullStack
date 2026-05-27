@@ -1,49 +1,40 @@
-import cv2
-import pytesseract
-from PIL import Image
-import platform
 import os
-import uuid
+from dotenv import load_dotenv
+from google import genai
 
-if platform.system() == "Windows":
-    pytesseract.pytesseract.tesseract_cmd = (
-        r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-    )
-else:
-    pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+load_dotenv()
+
+client = genai.Client(
+    api_key=os.getenv("GENAI_API_KEY")
+)
 
 
 def extract_text(image_path):
-    image = cv2.imread(image_path)
+    with open(image_path, "rb") as f:
+        image_bytes = f.read()
 
-    if image is None:
-        return "Image not found"
-
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    gray = cv2.resize(
-        gray,
-        None,
-        fx=2,
-        fy=2,
-        interpolation=cv2.INTER_CUBIC,
+    response = client.models.generate_content(
+        model="gemini-2.5-flash",
+        contents=[
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "text": """
+Extract all readable text from this food nutrition label image.
+Keep nutrition values exactly as shown.
+Return only extracted text.
+"""
+                    },
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image_bytes
+                        }
+                    }
+                ]
+            }
+        ]
     )
 
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-
-    gray = cv2.threshold(
-        gray,
-        0,
-        255,
-        cv2.THRESH_BINARY + cv2.THRESH_OTSU,
-    )[1]
-
-    processed_path = f"processed_{uuid.uuid4().hex}.png"
-    cv2.imwrite(processed_path, gray)
-
-    text = pytesseract.image_to_string(Image.open(processed_path))
-
-    if os.path.exists(processed_path):
-        os.remove(processed_path)
-
-    return text
+    return response.text
