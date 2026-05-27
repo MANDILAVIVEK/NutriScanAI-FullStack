@@ -1,54 +1,45 @@
 import os
-import base64
-import mimetypes
-import time
+import requests
 from dotenv import load_dotenv
-from google import genai
 
 load_dotenv()
 
+OCR_SPACE_API_KEY = os.getenv("OCR_SPACE_API_KEY")
+
 
 def extract_text(image_path):
-    api_key = os.getenv("GENAI_API_KEY")
+    if not OCR_SPACE_API_KEY:
+        return "OCR_SPACE_API_KEY missing"
 
-    if not api_key:
-        return "GENAI_API_KEY missing"
+    url = "https://api.ocr.space/parse/image"
 
-    client = genai.Client(api_key=api_key)
-
-    mime_type, _ = mimetypes.guess_type(image_path)
-    if not mime_type:
-        mime_type = "image/jpeg"
-
-    with open(image_path, "rb") as f:
-        image_base64 = base64.b64encode(f.read()).decode("utf-8")
-
-    prompt = """
-    Extract all readable text from this food nutrition label image.
-    Keep nutrition values exactly as shown.
-    Return only extracted text.
-    """
-
-    last_error = ""
-
-    for _ in range(3):
-        try:
-            response = client.models.generate_content(
-                model="gemini-2.0-flash-lite",
-                contents=[
-                    {
-                        "inline_data": {
-                            "mime_type": mime_type,
-                            "data": image_base64,
-                        }
-                    },
-                    prompt,
-                ],
+    try:
+        with open(image_path, "rb") as image_file:
+            response = requests.post(
+                url,
+                files={"filename": image_file},
+                data={
+                    "apikey": OCR_SPACE_API_KEY,
+                    "language": "eng",
+                    "isOverlayRequired": "false",
+                    "OCREngine": "2",
+                    "scale": "true",
+                    "detectOrientation": "true",
+                },
+                timeout=60,
             )
-            return response.text
 
-        except Exception as e:
-            last_error = str(e)
-            time.sleep(2)
+        result = response.json()
 
-    return f"OCR temporarily unavailable: {last_error}"
+        if result.get("IsErroredOnProcessing"):
+            return result.get("ErrorMessage", ["OCR failed"])[0]
+
+        parsed_results = result.get("ParsedResults")
+
+        if not parsed_results:
+            return "No text found"
+
+        return parsed_results[0].get("ParsedText", "")
+
+    except Exception as e:
+        return f"OCR failed: {str(e)}"
