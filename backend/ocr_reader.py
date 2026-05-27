@@ -34,7 +34,7 @@ def extract_text(image_path):
     for _ in range(3):
         try:
             response = client.models.generate_content(
-                model="gemini-2.0-flash",
+                model="gemini-1.5-flash",
                 contents=[
                     {
                         "inline_data": {
