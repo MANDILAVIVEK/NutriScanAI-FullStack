@@ -9,19 +9,13 @@ function App() {
   const [product, setProduct] = useState<any>(null);
   const [ocr, setOcr] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const analyzeProduct = async (code?: string) => {
     const finalCode = code || barcode;
-
-    if (!finalCode) {
-      alert("Enter barcode");
-      return;
-    }
+    if (!finalCode) return alert("Enter barcode");
 
     setLoading(true);
-
     try {
       const res = await fetch(`${API}/product/${finalCode}`);
       const data = await res.json();
@@ -29,7 +23,6 @@ function App() {
     } catch {
       alert("Backend not connected");
     }
-
     setLoading(false);
   };
 
@@ -146,7 +139,6 @@ function App() {
           </button>
 
           <h3>📷 Live Camera Scanner</h3>
-
           <button className="blue" onClick={startCameraScanner}>
             Start Camera Scanner
           </button>
@@ -154,53 +146,17 @@ function App() {
           <div id="reader"></div>
 
           <h3>🖼 Upload Barcode Image</h3>
-
           <input type="file" accept="image/*" onChange={uploadBarcodeImage} />
-        </div>
-
-        <div className="scanner-right">
-          <h2>Product Summary</h2>
-
-          {!product && (
-            <p>Enter, scan, or upload a barcode to view product details.</p>
-          )}
 
           {product && (
-            <>
-              <div className="summary-top">
-                <img
-                  src={
-                    product?.product?.image_url ||
-                    "https://via.placeholder.com/250x250?text=No+Image"
-                  }
-                  alt="Product"
-                  className="summary-img"
-                />
-
-                <div className="summary-info">
-                  <p>
-                    <b>Product:</b> {product?.product?.name || "N/A"}
-                  </p>
-                  <p>
-                    <b>Brand:</b> {product?.product?.brand || "N/A"}
-                  </p>
-                  <p>
-                    <b>Status:</b> {product?.status}
-                  </p>
-
-                  {product?.message && (
-                    <p className="warning">⚠ {product.message}</p>
-                  )}
-
-                  {analysis && (
-                    <>
-                      <h3>🚦 Health Score</h3>
-                      <h1>{analysis.score}/100</h1>
-                      <p>{analysis.status}</p>
-                    </>
-                  )}
-                </div>
-              </div>
+            <div className="details-below-upload">
+              {analysis && (
+                <>
+                  <h3>🚦 Health Score</h3>
+                  <h1>{analysis.score}/100</h1>
+                  <p>{analysis.status}</p>
+                </>
+              )}
 
               <h3>🥗 Nutrition Data</h3>
 
@@ -228,9 +184,7 @@ function App() {
               ))}
 
               <h3>🧾 Ingredients</h3>
-              <p>
-                {product?.product?.ingredients || "Ingredients not available"}
-              </p>
+              <p>{product?.product?.ingredients || "Ingredients not available"}</p>
 
               <h3>🔍 Ingredient Intelligence</h3>
               {product?.ingredient_analysis?.map((x: string, i: number) => (
@@ -241,7 +195,38 @@ function App() {
               {analysis?.advice?.map((x: string, i: number) => (
                 <p key={i}>{x}</p>
               ))}
-            </>
+            </div>
+          )}
+        </div>
+
+        <div className="scanner-right">
+          <h2>Product Summary</h2>
+
+          {!product && (
+            <p>Enter, scan, or upload a barcode to view product details.</p>
+          )}
+
+          {product && (
+            <div className="summary-top">
+              <img
+                src={
+                  product?.product?.image_url ||
+                  "https://via.placeholder.com/250x250?text=No+Image"
+                }
+                alt="Product"
+                className="summary-img"
+              />
+
+              <div className="summary-info">
+                <p><b>Product:</b> {product?.product?.name || "N/A"}</p>
+                <p><b>Brand:</b> {product?.product?.brand || "N/A"}</p>
+                <p><b>Status:</b> {product?.status}</p>
+
+                {product?.message && (
+                  <p className="warning">⚠ {product.message}</p>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </section>
@@ -250,7 +235,6 @@ function App() {
         <h2>🧠 OCR Nutrition Extraction</h2>
 
         <input type="file" accept="image/*" onChange={uploadOCR} />
-
         <p>Upload only the nutrition table for better OCR accuracy.</p>
 
         {ocr && (
@@ -270,8 +254,33 @@ function App() {
               <Box title="Sodium" value={ocr.nutrition?.sodium} unit="mg" />
             </div>
 
-            <h3>📄 OCR Extracted Text</h3>
-            <pre>{ocr.ocr_text}</pre>
+            <h3>🧠 Nutrition Analyzer</h3>
+
+            <div className="analysis-box">
+              {Number(ocr.nutrition?.sugar) > 20 && (
+                <p>⚠ High sugar detected. Limit frequent consumption.</p>
+              )}
+
+              {Number(ocr.nutrition?.fat) > 10 && (
+                <p>⚠ High fat content detected.</p>
+              )}
+
+              {Number(ocr.nutrition?.carbs) > 60 && (
+                <p>⚠ High carbohydrate product.</p>
+              )}
+
+              {Number(ocr.nutrition?.protein) >= 5 ? (
+                <p>✅ Moderate protein content.</p>
+              ) : (
+                <p>⚠ Low protein content.</p>
+              )}
+
+              {Number(ocr.nutrition?.sodium) > 300 ? (
+                <p>⚠ High sodium level.</p>
+              ) : (
+                <p>✅ Sodium level is acceptable.</p>
+              )}
+            </div>
           </div>
         )}
       </section>
