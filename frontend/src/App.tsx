@@ -4,7 +4,6 @@ import "./App.css";
 
 const API = "https://nutriscanai-fullstack.onrender.com";
 
-
 function App() {
   const [barcode, setBarcode] = useState("");
   const [product, setProduct] = useState<any>(null);
@@ -54,9 +53,7 @@ function App() {
     }
   };
 
-  const uploadBarcodeImage = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const uploadBarcodeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -120,7 +117,6 @@ function App() {
       <section className="hero">
         <div className="hero-text">
           <h2>AI Nutrition Intelligence Platform</h2>
-
           <p>
             Scan barcodes, analyze ingredients, detect hidden sugars, and get
             AI-powered health recommendations instantly.
@@ -161,54 +157,83 @@ function App() {
         <input type="file" accept="image/*" onChange={uploadBarcodeImage} />
 
         {product && (
-          <div className="result">
-            <h2>Product Summary</h2>
-
-            <p>
-              <b>Product:</b> {product?.product?.name || "N/A"}
-            </p>
-
-            <p>
-              <b>Brand:</b> {product?.product?.brand || "N/A"}
-            </p>
-
-            <p>
-              <b>Status:</b> {product?.status}
-            </p>
-
-            {analysis && (
-              <>
-                <h3>🚦 Health Score</h3>
-                <h1>{analysis.score}/100</h1>
-                <p>{analysis.status}</p>
-              </>
-            )}
-
-            <h3>🥗 Nutrition Data</h3>
-
-            <div className="grid">
-              <Box title="Sugar" value={n.sugars_100g} unit="g" />
-              <Box title="Protein" value={n.proteins_100g} unit="g" />
-              <Box title="Carbs" value={n.carbohydrates_100g} unit="g" />
-              <Box title="Fat" value={n.fat_100g} unit="g" />
-              <Box title="Salt" value={n.salt_100g} unit="g" />
+          <div className="product-layout">
+            <div className="product-image-box">
+              <img
+                src={
+                  product?.product?.image_url ||
+                  "https://via.placeholder.com/300x300?text=No+Image"
+                }
+                alt={product?.product?.name || "Product"}
+                className="product-image"
+              />
             </div>
 
-            <h3>🧾 Ingredients</h3>
+            <div className="product-info-box">
+              <h2>Product Summary</h2>
 
-            <p>{product?.product?.ingredients || "Ingredients not available"}</p>
+              <p>
+                <b>Product:</b> {product?.product?.name || "N/A"}
+              </p>
 
-            <h3>🔍 Ingredient Intelligence</h3>
+              <p>
+                <b>Brand:</b> {product?.product?.brand || "N/A"}
+              </p>
 
-            {product?.ingredient_analysis?.map((x: string, i: number) => (
-              <p key={i}>{x}</p>
-            ))}
+              <p>
+                <b>Status:</b> {product?.status}
+              </p>
 
-            <h3>🤖 AI Recommendations</h3>
+              {product?.message && (
+                <p className="warning">⚠ {product.message}</p>
+              )}
 
-            {analysis?.advice?.map((x: string, i: number) => (
-              <p key={i}>{x}</p>
-            ))}
+              {analysis && (
+                <>
+                  <h3>🚦 Health Score</h3>
+                  <h1>{analysis.score}/100</h1>
+                  <p>{analysis.status}</p>
+                </>
+              )}
+
+              <h3>🥗 Nutrition Data</h3>
+
+              <div className="nutrition-grid">
+                <Box title="Sugar" value={n.sugars_100g} unit="g" />
+                <Box title="Protein" value={n.proteins_100g} unit="g" />
+                <Box title="Carbs" value={n.carbohydrates_100g} unit="g" />
+                <Box title="Fat" value={n.fat_100g} unit="g" />
+                <Box title="Salt" value={n.salt_100g} unit="g" />
+              </div>
+
+              <h3>🏷 Product Category</h3>
+              {product?.product_category?.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+
+              <h3>🥗 Diet Suitability</h3>
+              {product?.diet_suitability?.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+
+              <h3>⚠ Allergy Detection</h3>
+              {product?.allergy_detection?.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+
+              <h3>🧾 Ingredients</h3>
+              <p>{product?.product?.ingredients || "Ingredients not available"}</p>
+
+              <h3>🔍 Ingredient Intelligence</h3>
+              {product?.ingredient_analysis?.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+
+              <h3>🤖 AI Recommendations</h3>
+              {analysis?.advice?.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+            </div>
           </div>
         )}
       </section>
@@ -224,7 +249,7 @@ function App() {
           <div className="result">
             <h3>🧪 Extracted Nutrition Values</h3>
 
-            <div className="grid">
+            <div className="nutrition-grid">
               <Box title="Protein" value={ocr.nutrition?.protein} unit="g" />
               <Box title="Carbs" value={ocr.nutrition?.carbs} unit="g" />
               <Box title="Sugar" value={ocr.nutrition?.sugar} unit="g" />
@@ -238,7 +263,6 @@ function App() {
             </div>
 
             <h3>📄 OCR Extracted Text</h3>
-
             <pre>{ocr.ocr_text}</pre>
           </div>
         )}
