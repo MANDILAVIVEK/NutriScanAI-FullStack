@@ -17,7 +17,15 @@ def preprocess_image_bytes(image_bytes):
         raise ValueError("Could not decode image bytes")
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
+
+    gray = cv2.resize(
+        gray,
+        None,
+        fx=1.2,
+        fy=1.2,
+        interpolation=cv2.INTER_AREA,
+    )
+
     gray = cv2.medianBlur(gray, 3)
 
     gray = cv2.adaptiveThreshold(
@@ -29,7 +37,11 @@ def preprocess_image_bytes(image_bytes):
         2,
     )
 
-    success, encoded_img = cv2.imencode(".png", gray)
+    success, encoded_img = cv2.imencode(
+        ".jpg",
+        gray,
+        [int(cv2.IMWRITE_JPEG_QUALITY), 75],
+    )
 
     if not success:
         raise ValueError("Could not encode processed image")
@@ -49,7 +61,7 @@ def extract_text(image_bytes):
         response = requests.post(
             url,
             files={
-                "file": ("nutrition.png", processed_bytes, "image/png")
+                "file": ("nutrition.jpg", processed_bytes, "image/jpeg")
             },
             data={
                 "apikey": OCR_SPACE_API_KEY,
