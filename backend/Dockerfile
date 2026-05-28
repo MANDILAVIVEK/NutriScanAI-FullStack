@@ -1,4 +1,4 @@
-FROM python3.11-slim
+FROM python:3.11-slim
 
 # Install OCR and image processing system dependencies
 RUN apt-get update && apt-get install -y \
