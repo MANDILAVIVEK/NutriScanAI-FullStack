@@ -14,10 +14,9 @@ from ai_ingredient_explainer import explain_ingredients
 
 app = FastAPI()
 
-# =========================
-# CORS FIX FOR VERCEL
-# =========================
-
+# ============================================================================
+# CORS ENGINE INTERFACE MIDDLEWARE (ROUTING ENABLER FOR DEPLOYMENTS)
+# ============================================================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +31,9 @@ def home():
     return {"message": "NutriScanAI Backend Running"}
 
 
+# ============================================================================
+# PRIMARY BARCODE SCANNING DISPATCH ROUTE
+# ============================================================================
 @app.get("/product/{barcode}")
 def get_product(barcode: str):
     product = fetch_product_data(barcode)
@@ -78,6 +80,9 @@ def get_product(barcode: str):
     }
 
 
+# ============================================================================
+# DEFENSIVE ADVANCED COMPUTER VISION OCR SCANNING ENDPOINT
+# ============================================================================
 @app.post("/ocr")
 async def ocr_nutrition(file: UploadFile = File(...)):
     file_path = f"temp_{file.filename}"
@@ -85,19 +90,87 @@ async def ocr_nutrition(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    text = extract_text(file_path)
-    nutrition = extract_nutrition_values(text)
+    try:
+        # 1. Run raw machine vision text block ingestion and regex mapping
+        text = extract_text(file_path)
+        nutrition = extract_nutrition_values(text)
 
-    if os.path.exists(file_path):
-        os.remove(file_path)
+        # 2. Convert text fields and missing keys safely into floats
+        def clean_to_float(v):
+            try:
+                return float(v) if v not in [None, "Not Found"] else 0.0
+            except:
+                return 0.0
 
-    return {
-        "status": "success",
-        "ocr_text": text,
-        "nutrition": nutrition,
-    }
+        sugar = clean_to_float(nutrition.get("sugar"))
+        protein = clean_to_float(nutrition.get("protein"))
+        carbs = clean_to_float(nutrition.get("carbs"))
+        fat = clean_to_float(nutrition.get("fat"))
+        saturated_fat = clean_to_float(nutrition.get("saturated_fat"))
+        sodium = clean_to_float(nutrition.get("sodium"))
+
+        # Convert sodium (mg) to salt (g) for standard analytics engine mapping
+        salt = (sodium / 1000.0) * 2.5
+
+        # 3. Failsafe: Prevent empty/failed scans from triggering false scores
+        if all(v == 0 for v in [sugar, protein, carbs, fat, sodium]):
+            return {
+                "status": "error",
+                "message": "Nutrition values could not be extracted properly from the image.",
+            }
+
+        # 4. Bind parameters into your centralized macro validator engines
+        analysis = analyze_nutrition(
+            sugar,
+            protein,
+            carbs,
+            salt,
+            fat,
+        )
+
+        category_result = get_product_category(
+            sugar,
+            protein,
+            carbs,
+            fat,
+        )
+
+        diet_result = get_diet_suitability(
+            sugar,
+            protein,
+            fat,
+        )
+
+        # 5. Return structured, sanitized JSON to prevent frontend map crashes
+        return {
+            "status": "success",
+            "ocr_text": text,
+            "nutrition": {
+                "sugar": sugar,
+                "protein": protein,
+                "carbs": carbs,
+                "fat": fat,
+                "saturated_fat": saturated_fat,
+                "sodium": sodium,
+                "salt": round(salt, 2)
+            },
+            "analysis": analysis,
+            "product_category": category_result,
+            "diet_suitability": diet_result,
+            "allergy_detection": [
+                "⚠ OCR data blocks do not contain ingredient texts required for allergen tracing."
+            ],
+        }
+
+    finally:
+        # Disk protection layer: Guarantee temporary image file erasure
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
+# ============================================================================
+# COMPLEMENTARY IMAGE BARCODE AND MANUAL INTERFACE ADJUSTMENT ROUTES
+# ============================================================================
 @app.post("/scan-barcode-image")
 async def scan_barcode_image(file: UploadFile = File(...)):
     file_path = f"barcode_{file.filename}"
@@ -146,17 +219,13 @@ def analyze_corrected(data: CorrectedNutrition):
     }
 
 
+# ============================================================================
+# CENTRAL HEURISTICS LOGIC AND DIAGNOSTIC UTILITIES
+# ============================================================================
 def detect_allergies(ingredients):
     allergy_keywords = [
-        "milk",
-        "soy",
-        "peanut",
-        "nuts",
-        "gluten",
-        "wheat",
-        "almond",
-        "cashew",
-        "egg",
+        "milk", "soy", "peanut", "nuts", "gluten",
+        "wheat", "almond", "cashew", "egg"
     ]
 
     found = []
@@ -238,19 +307,13 @@ class IngredientRequest(BaseModel):
 
 @app.post("/explain-ingredients")
 def explain(data: IngredientRequest):
-
     try:
-        result = explain_ingredients(
-            data.ingredients
-        )
-
+        result = explain_ingredients(data.ingredients)
         return {
             "status": "success",
             "result": result
         }
-
     except Exception as e:
-
         return {
             "status": "error",
             "message": str(e)

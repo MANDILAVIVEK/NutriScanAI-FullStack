@@ -12,8 +12,12 @@ def extract_value(patterns, text):
 
 
 def clean_number(value):
-    if value == "Not Found":
-        return value
+    """
+    Cleans OCR text artifacts and explicitly outputs float representations.
+    Returns 0.0 if the metric is missing to avoid crashing math functions.
+    """
+    if value == "Not Found" or value is None:
+        return 0.0
 
     try:
         value = str(value).strip()
@@ -24,15 +28,15 @@ def clean_number(value):
         value = value.replace("%", "")
         value = value.strip()
 
-        # OCR issue example:
-        # 17438 should become 17.43
+        # OCR issue example: 17438 should become 17.43
         if len(value) >= 5 and "." not in value:
             value = value[:2] + "." + value[2:4]
 
-        return value
+        # Convert to float so calculation modules can use it immediately
+        return float(value) if value else 0.0
 
-    except:
-        return value
+    except Exception:
+        return 0.0
 
 
 def extract_nutrition_values(text):
@@ -54,9 +58,8 @@ def extract_nutrition_values(text):
     text = text.replace("30¢", "30g")
 
     # -------------------------------
-    # Extract values
+    # Extract values via Regular Expressions
     # -------------------------------
-
     nutrition["protein"] = extract_value(
         [
             r"PROTEIN\s*\([gG9]\)\s*(\d+\.?\d*)",
@@ -114,7 +117,7 @@ def extract_nutrition_values(text):
         text,
     )
 
-    # Clean all extracted values
+    # Clean all extracted values into pure mathematical numbers
     for key in nutrition:
         nutrition[key] = clean_number(nutrition[key])
 
