@@ -14,9 +14,6 @@ from ai_ingredient_explainer import explain_ingredients
 
 app = FastAPI()
 
-# ============================================================================
-# CORS ENGINE INTERFACE MIDDLEWARE (ROUTING ENABLER FOR DEPLOYMENTS)
-# ============================================================================
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -31,9 +28,6 @@ def home():
     return {"message": "NutriScanAI Backend Running"}
 
 
-# ============================================================================
-# PRIMARY BARCODE SCANNING DISPATCH ROUTE
-# ============================================================================
 @app.get("/product/{barcode}")
 def get_product(barcode: str):
     product = fetch_product_data(barcode)
@@ -80,26 +74,18 @@ def get_product(barcode: str):
     }
 
 
-# ============================================================================
-# DEFENSIVE ADVANCED COMPUTER VISION OCR SCANNING ENDPOINT
-# ============================================================================
 @app.post("/ocr")
 async def ocr_nutrition(file: UploadFile = File(...)):
-    file_path = f"temp_{file.filename}"
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    image_bytes = await file.read()
 
     try:
-        # 1. Run raw machine vision text block ingestion and regex mapping
-        text = extract_text(file_path)
+        text = extract_text(image_bytes)
         nutrition = extract_nutrition_values(text)
 
-        # 2. Convert text fields and missing keys safely into floats
         def clean_to_float(v):
             try:
                 return float(v) if v not in [None, "Not Found"] else 0.0
-            except:
+            except Exception:
                 return 0.0
 
         sugar = clean_to_float(nutrition.get("sugar"))
@@ -109,17 +95,16 @@ async def ocr_nutrition(file: UploadFile = File(...)):
         saturated_fat = clean_to_float(nutrition.get("saturated_fat"))
         sodium = clean_to_float(nutrition.get("sodium"))
 
-        # Convert sodium (mg) to salt (g) for standard analytics engine mapping
         salt = (sodium / 1000.0) * 2.5
 
-        # 3. Failsafe: Prevent empty/failed scans from triggering false scores
         if all(v == 0 for v in [sugar, protein, carbs, fat, sodium]):
             return {
-                "status": "error",
+                "status": "debug",
                 "message": "Nutrition values could not be extracted properly from the image.",
+                "ocr_text": text,
+                "nutrition": nutrition,
             }
 
-        # 4. Bind parameters into your centralized macro validator engines
         analysis = analyze_nutrition(
             sugar,
             protein,
@@ -141,7 +126,6 @@ async def ocr_nutrition(file: UploadFile = File(...)):
             fat,
         )
 
-        # 5. Return structured, sanitized JSON to prevent frontend map crashes
         return {
             "status": "success",
             "ocr_text": text,
@@ -152,7 +136,7 @@ async def ocr_nutrition(file: UploadFile = File(...)):
                 "fat": fat,
                 "saturated_fat": saturated_fat,
                 "sodium": sodium,
-                "salt": round(salt, 2)
+                "salt": round(salt, 2),
             },
             "analysis": analysis,
             "product_category": category_result,
@@ -162,15 +146,13 @@ async def ocr_nutrition(file: UploadFile = File(...)):
             ],
         }
 
-    finally:
-        # Disk protection layer: Guarantee temporary image file erasure
-        if os.path.exists(file_path):
-            os.remove(file_path)
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+        }
 
 
-# ============================================================================
-# COMPLEMENTARY IMAGE BARCODE AND MANUAL INTERFACE ADJUSTMENT ROUTES
-# ============================================================================
 @app.post("/scan-barcode-image")
 async def scan_barcode_image(file: UploadFile = File(...)):
     file_path = f"barcode_{file.filename}"
@@ -178,21 +160,23 @@ async def scan_barcode_image(file: UploadFile = File(...)):
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    barcode = scan_barcode_from_image(file_path)
+    try:
+        barcode = scan_barcode_from_image(file_path)
 
-    if os.path.exists(file_path):
-        os.remove(file_path)
+        if barcode:
+            return {
+                "status": "success",
+                "barcode": barcode,
+            }
 
-    if barcode:
         return {
-            "status": "success",
-            "barcode": barcode,
+            "status": "error",
+            "message": "Barcode not detected",
         }
 
-    return {
-        "status": "error",
-        "message": "Barcode not detected",
-    }
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
 
 class CorrectedNutrition(BaseModel):
@@ -219,13 +203,17 @@ def analyze_corrected(data: CorrectedNutrition):
     }
 
 
-# ============================================================================
-# CENTRAL HEURISTICS LOGIC AND DIAGNOSTIC UTILITIES
-# ============================================================================
 def detect_allergies(ingredients):
     allergy_keywords = [
-        "milk", "soy", "peanut", "nuts", "gluten",
-        "wheat", "almond", "cashew", "egg"
+        "milk",
+        "soy",
+        "peanut",
+        "nuts",
+        "gluten",
+        "wheat",
+        "almond",
+        "cashew",
+        "egg",
     ]
 
     found = []
@@ -249,7 +237,7 @@ def get_product_category(sugar, protein, carbs, fat):
         protein = float(protein) if protein is not None else 0
         carbs = float(carbs) if carbs is not None else 0
         fat = float(fat) if fat is not None else 0
-    except:
+    except Exception:
         return ["Category unavailable"]
 
     if protein > 10:
@@ -280,7 +268,7 @@ def get_diet_suitability(sugar, protein, fat):
         sugar = float(sugar) if sugar is not None else 0
         protein = float(protein) if protein is not None else 0
         fat = float(fat) if fat is not None else 0
-    except:
+    except Exception:
         return ["Diet suitability unavailable"]
 
     if sugar < 5 and fat < 10:
@@ -309,12 +297,14 @@ class IngredientRequest(BaseModel):
 def explain(data: IngredientRequest):
     try:
         result = explain_ingredients(data.ingredients)
+
         return {
             "status": "success",
-            "result": result
+            "result": result,
         }
+
     except Exception as e:
         return {
             "status": "error",
-            "message": str(e)
+            "message": str(e),
         }
