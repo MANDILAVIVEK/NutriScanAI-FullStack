@@ -14,20 +14,31 @@ def preprocess_image_bytes(image_bytes):
     image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
     if image is None:
-        raise ValueError("Could not decode image bytes")
+        raise ValueError("Could not decode image")
 
+    # Convert to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    gray = cv2.resize(
-        gray,
-        None,
-        fx=1.2,
-        fy=1.2,
-        interpolation=cv2.INTER_AREA,
-    )
+    # STRONG resize reduction
+    height, width = gray.shape
 
-    gray = cv2.medianBlur(gray, 3)
+    max_width = 1200
 
+    if width > max_width:
+        ratio = max_width / width
+        new_width = int(width * ratio)
+        new_height = int(height * ratio)
+
+        gray = cv2.resize(
+            gray,
+            (new_width, new_height),
+            interpolation=cv2.INTER_AREA
+        )
+
+    # Noise reduction
+    gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+    # OCR thresholding
     gray = cv2.adaptiveThreshold(
         gray,
         255,
@@ -37,16 +48,21 @@ def preprocess_image_bytes(image_bytes):
         2,
     )
 
+    # VERY HIGH compression
     success, encoded_img = cv2.imencode(
         ".jpg",
         gray,
-        [int(cv2.IMWRITE_JPEG_QUALITY), 75],
+        [int(cv2.IMWRITE_JPEG_QUALITY), 40]
     )
 
     if not success:
-        raise ValueError("Could not encode processed image")
+        raise ValueError("Encoding failed")
 
-    return encoded_img.tobytes()
+    compressed_bytes = encoded_img.tobytes()
+
+    print("DEBUG IMAGE SIZE KB:", len(compressed_bytes) / 1024)
+
+    return compressed_bytes
 
 
 def extract_text(image_bytes):
@@ -61,7 +77,11 @@ def extract_text(image_bytes):
         response = requests.post(
             url,
             files={
-                "file": ("nutrition.jpg", processed_bytes, "image/jpeg")
+                "file": (
+                    "nutrition.jpg",
+                    processed_bytes,
+                    "image/jpeg"
+                )
             },
             data={
                 "apikey": OCR_SPACE_API_KEY,
@@ -75,9 +95,10 @@ def extract_text(image_bytes):
         )
 
         response.raise_for_status()
+
         result = response.json()
 
-        print("DEBUG OCR RESPONSE:", result)
+        print("OCR RESPONSE:", result)
 
         if result.get("IsErroredOnProcessing"):
             return str(result.get("ErrorMessage"))
