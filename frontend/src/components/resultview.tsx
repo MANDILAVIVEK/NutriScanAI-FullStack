@@ -3,6 +3,25 @@ import NutritionCard from "./nutritioncard";
 function ResultView({ data, type }: any) {
   const isBarcode = type === "barcode";
 
+  const hasProduct =
+    data?.product &&
+    data?.product?.name &&
+    data?.product?.name !== "N/A" &&
+    data?.status !== "not_found";
+
+  if (isBarcode && !hasProduct) {
+    return (
+      <section className="empty-card">
+        <div className="empty-icon">⚠️</div>
+        <h2>Product Not Found</h2>
+        <p>
+          This barcode was not found in the database. Try another barcode or
+          upload a clearer barcode image.
+        </p>
+      </section>
+    );
+  }
+
   const nutrition = data?.nutrition || data?.product?.nutriments || {};
 
   const sugar = nutrition.sugar || nutrition.sugars_100g || "N/A";
@@ -16,6 +35,8 @@ function ResultView({ data, type }: any) {
   const sugarNum = Number(sugar);
   const fatNum = Number(fat);
   const carbsNum = Number(carbs);
+  const proteinNum = Number(protein);
+  const sodiumNum = Number(sodium);
 
   const score = sugarNum > 20 || fatNum > 15 || carbsNum > 65 ? 47 : 82;
   const status = score < 60 ? "Needs Attention" : "Healthy Choice";
@@ -34,9 +55,17 @@ function ResultView({ data, type }: any) {
             />
           )}
 
-          <p><b>Product:</b> {data?.product?.name || "N/A"}</p>
-          <p><b>Brand:</b> {data?.product?.brand || "N/A"}</p>
-          <p><b>Status:</b> {data?.status}</p>
+          <p>
+            <b>Product:</b> {data?.product?.name || "N/A"}
+          </p>
+
+          <p>
+            <b>Brand:</b> {data?.product?.brand || "N/A"}
+          </p>
+
+          <p>
+            <b>Status:</b> {data?.status || "success"}
+          </p>
         </section>
       )}
 
@@ -56,45 +85,58 @@ function ResultView({ data, type }: any) {
           <NutritionCard label="Protein" value={protein} unit="g" icon="💪" />
           <NutritionCard label="Carbs" value={carbs} unit="g" icon="🌾" />
           <NutritionCard label="Fat" value={fat} unit="g" icon="🥑" />
-          <NutritionCard label="Sat Fat" value={saturatedFat} unit="g" icon="🧈" />
+          <NutritionCard
+            label="Sat Fat"
+            value={saturatedFat}
+            unit="g"
+            icon="🧈"
+          />
           <NutritionCard label="Sodium" value={sodium} unit="mg" icon="🧂" />
         </div>
       </section>
 
       {isBarcode && (
         <>
-          <section className="insight-card">
-            <h2>🏷 Product Category</h2>
-            {data?.product_category?.map((x: string, i: number) => (
-              <p key={i}>{x}</p>
-            ))}
-          </section>
+          {data?.product_category?.length > 0 && (
+            <section className="insight-card">
+              <h2>🏷 Product Category</h2>
+              {data.product_category.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+            </section>
+          )}
 
-          <section className="insight-card">
-            <h2>🥗 Diet Suitability</h2>
-            {data?.diet_suitability?.map((x: string, i: number) => (
-              <p key={i}>{x}</p>
-            ))}
-          </section>
+          {data?.diet_suitability?.length > 0 && (
+            <section className="insight-card">
+              <h2>🥗 Diet Suitability</h2>
+              {data.diet_suitability.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+            </section>
+          )}
 
-          <section className="insight-card">
-            <h2>⚠ Allergy Detection</h2>
-            {data?.allergy_detection?.map((x: string, i: number) => (
-              <p key={i}>{x}</p>
-            ))}
-          </section>
+          {data?.allergy_detection?.length > 0 && (
+            <section className="insight-card">
+              <h2>⚠ Allergy Detection</h2>
+              {data.allergy_detection.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+            </section>
+          )}
 
           <section className="insight-card">
             <h2>🧾 Ingredients</h2>
             <p>{data?.product?.ingredients || "Ingredients not available"}</p>
           </section>
 
-          <section className="insight-card">
-            <h2>🔍 Ingredient Intelligence</h2>
-            {data?.ingredient_analysis?.map((x: string, i: number) => (
-              <p key={i}>{x}</p>
-            ))}
-          </section>
+          {data?.ingredient_analysis?.length > 0 && (
+            <section className="insight-card">
+              <h2>🔍 Ingredient Intelligence</h2>
+              {data.ingredient_analysis.map((x: string, i: number) => (
+                <p key={i}>{x}</p>
+              ))}
+            </section>
+          )}
         </>
       )}
 
@@ -105,8 +147,18 @@ function ResultView({ data, type }: any) {
           {sugarNum > 20 && <p>⚠ High sugar detected. Limit frequent intake.</p>}
           {fatNum > 10 && <p>⚠ High fat content found.</p>}
           {carbsNum > 60 && <p>⚠ High carbohydrate product.</p>}
-          <p>✅ Moderate protein content.</p>
-          <p>✅ Sodium level is acceptable.</p>
+
+          {proteinNum >= 5 ? (
+            <p>✅ Moderate protein content.</p>
+          ) : (
+            <p>⚠ Low protein content.</p>
+          )}
+
+          {sodiumNum > 300 ? (
+            <p>⚠ Sodium level is high.</p>
+          ) : (
+            <p>✅ Sodium level is acceptable.</p>
+          )}
         </section>
       )}
     </section>
