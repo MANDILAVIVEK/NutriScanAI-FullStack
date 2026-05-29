@@ -178,7 +178,13 @@ function Scanner() {
             <aside className="drawer" onClick={(e) => e.stopPropagation()}>
               <div className="drawer-head">
                 <h2>Menu</h2>
-                <button onClick={() => setMenuOpen(false)}>✕</button>
+
+                <button
+                  className="close-btn"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  ✕
+                </button>
               </div>
 
               <button onClick={() => openPage("barcode")}>📦 Barcode Scanner</button>
