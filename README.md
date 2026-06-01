@@ -245,7 +245,7 @@ NutriScanAI was built to simplify nutrition awareness using Barcode Scanning, OC
 Data Science Graduate | AI & Analytics Enthusiast
 
 🔗 LinkedIn  
-https://www.linkedin.com/in/vivek-reddy-mandila/
+https://www.linkedin.com/in/vivek-reddy-mandila
 
 🔗 GitHub  
 https://github.com/MANDILAVIVEK
