@@ -98,8 +98,11 @@ select {
   background: var(--card);
   border-radius: 26px;
   padding: 18px 24px;
-  margin-bottom: 24px;
+  margin-bottom: 8px;
   border: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .brand {
@@ -939,44 +942,6 @@ button:hover,
   }
 }
 
-@media (max-width: 768px) {
-  .mobile-bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    padding: 10px;
-    background: var(--shell);
-    border-top: 1px solid var(--border);
-    z-index: 999;
-  }
-
-  .mobile-bottom-nav .tab {
-    padding: 10px 6px;
-    border-radius: 16px;
-    font-size: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .mobile-bottom-nav .tab span {
-    font-size: 11px;
-    font-weight: 800;
-  }
-
-  .phone-shell {
-    padding-bottom: 100px;
-  }
-
-  .mini-hero {
-    display: none;
-  }
-}
 .profile-card {
   background: linear-gradient(135deg, #e8f7ee, #ffffff);
   border: 1px solid var(--border);
@@ -1064,32 +1029,24 @@ button:hover,
   }
 }
 
-/* Mobile bottom nav */
 @media (max-width: 768px) {
   .mobile-bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-
+    position: sticky;
+    top: 0;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-
     gap: 8px;
     padding: 10px;
-
     background: var(--shell);
-    border-top: 1px solid var(--border);
-
+    border: 1px solid var(--border);
+    border-radius: 18px;
     z-index: 999;
-    margin: 0;
+    margin-bottom: 20px;
   }
 
   .mobile-bottom-nav .tab {
-    padding: 10px 6px;
+    padding: 12px;
     border-radius: 16px;
-    font-size: 20px;
-
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1099,10 +1056,6 @@ button:hover,
   .mobile-bottom-nav .tab span {
     font-size: 11px;
     font-weight: 800;
-  }
-
-  .phone-shell {
-    padding-bottom: 100px;
   }
 
   .mini-hero {
