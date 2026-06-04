@@ -102,7 +102,7 @@ select {
   border: 1px solid var(--border);
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 500;
 }
 
 .brand {
@@ -187,25 +187,32 @@ select {
 .drawer-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(8px);
-  z-index: 999;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
 }
 
 .drawer {
   position: fixed;
   top: 0;
   right: 0;
-  width: 320px;
+
+  width: 260px;
+  max-width: 75vw;
   height: 100vh;
+
   background: var(--shell);
-  padding: 24px;
+  padding: 20px;
+
   display: flex;
   flex-direction: column;
   gap: 12px;
-  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.18);
+
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.25);
   animation: slideIn 0.25s ease;
-  z-index: 1000;
+  z-index: 10000;
+
+  overflow-y: auto;
 }
 
 @keyframes slideIn {
@@ -842,7 +849,8 @@ button:hover,
   }
 
   .drawer {
-    width: 270px;
+    width: 240px;
+    max-width: 72vw;
   }
 
   .drawer-head .close-btn {
@@ -1032,7 +1040,8 @@ button:hover,
 @media (max-width: 768px) {
   .mobile-bottom-nav {
     position: sticky;
-    top: 0;
+    top: 88px;
+    z-index: 400;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
@@ -1040,7 +1049,6 @@ button:hover,
     background: var(--shell);
     border: 1px solid var(--border);
     border-radius: 18px;
-    z-index: 999;
     margin-bottom: 20px;
   }
 
