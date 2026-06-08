@@ -3,7 +3,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import shutil
 import os
-
+from fastapi import UploadFile, File, HTTPException
+from barcode_image_scanner import scan_barcode_from_image
+import os
+import uuid
 from product_api import fetch_product_data
 from analyzer import analyze_nutrition
 from ingredient_analyzer import analyze_ingredients
@@ -155,28 +158,35 @@ async def ocr_nutrition(file: UploadFile = File(...)):
 
 @app.post("/scan-barcode-image")
 async def scan_barcode_image(file: UploadFile = File(...)):
-    file_path = f"barcode_{file.filename}"
-
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
     try:
-        barcode = scan_barcode_from_image(file_path)
+        os.makedirs("temp_uploads", exist_ok=True)
 
-        if barcode:
-            return {
-                "status": "success",
-                "barcode": barcode,
-            }
+        temp_path = f"temp_uploads/{uuid.uuid4()}_{file.filename}"
+
+        with open(temp_path, "wb") as buffer:
+            buffer.write(await file.read())
+
+        barcode = scan_barcode_from_image(temp_path)
+
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+        if not barcode:
+            raise HTTPException(
+                status_code=404,
+                detail="No barcode detected"
+            )
 
         return {
-            "status": "error",
-            "message": "Barcode not detected",
+            "status": "success",
+            "barcode": barcode
         }
 
-    finally:
-        if os.path.exists(file_path):
-            os.remove(file_path)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
 
 
 class CorrectedNutrition(BaseModel):
