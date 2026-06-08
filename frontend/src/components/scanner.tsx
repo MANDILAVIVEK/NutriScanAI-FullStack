@@ -98,8 +98,9 @@ function Scanner() {
       } else {
         alert("Barcode not detected");
       }
-    } catch {
-      alert("Barcode image scan failed");
+    } catch (error: any) {
+      console.error("Barcode image upload error:", error);
+      alert(error.message || "Barcode image scan failed");
     } finally {
       setLoading(false);
       e.target.value = "";

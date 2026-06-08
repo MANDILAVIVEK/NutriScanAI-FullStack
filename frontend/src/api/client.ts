@@ -25,11 +25,27 @@ export const scanBarcodeImage = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_URL}/scan-barcode-image`, {
-    method: "POST",
-    body: formData,
-  });
+  console.log("API URL:", import.meta.env.VITE_API_URL);
+  console.log(
+    "Calling:",
+    `${import.meta.env.VITE_API_URL}/scan-barcode-image`
+  );
 
-  if (!response.ok) throw new Error("Barcode scan failed");
-  return await response.json();
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/scan-barcode-image`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  console.log("Barcode image response:", data);
+
+  if (!response.ok) {
+    throw new Error(data?.detail || "Barcode scan failed");
+  }
+
+  return data;
 };
