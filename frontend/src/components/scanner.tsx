@@ -3,23 +3,16 @@ import { Html5Qrcode } from "html5-qrcode";
 import {
   uploadImageForOCR,
   getProductByBarcode,
+  scanBarcodeImage,
 } from "../api/client";
 import ResultView from "./resultview";
-import ScanHistory from "./ScanHistory";
-import Dashboard from "./Dashboard";
-import { auth } from "../firebase/firebaseConfig";
-import { saveScanHistory } from "../firebase/scanHistory";
-import { logout } from "../firebase/auth";
-import ProfilePage from "./ProfilePage";
 
-type PageType = "dashboard" | "barcode" | "ocr" | "history" | "profile";
+type PageType = "barcode" | "ocr";
 type ThemeType = "light" | "dark" | "system";
-type MenuView = "main" | "settings" | "theme";
 
 function Scanner() {
   const [page, setPage] = useState<PageType>("barcode");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuView, setMenuView] = useState<MenuView>("main");
   const [showFeatures, setShowFeatures] = useState(false);
 
   const [theme, setTheme] = useState<ThemeType>(
@@ -29,6 +22,7 @@ function Scanner() {
   const [barcode, setBarcode] = useState("");
   const [data, setData] = useState<any>(null);
   const [type, setType] = useState<"barcode" | "ocr" | null>(null);
+
   const [loading, setLoading] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
 
@@ -65,12 +59,6 @@ function Scanner() {
     setPage(nextPage);
     setShowFeatures(false);
     setMenuOpen(false);
-    setMenuView("main");
-  };
-
-  const handleLogout = async () => {
-    await logout();
-    window.location.reload();
   };
 
   const analyzeBarcode = async (code?: string) => {
@@ -83,20 +71,7 @@ function Scanner() {
 
     try {
       setLoading(true);
-
       const result = await getProductByBarcode(finalCode.trim());
-      const user = auth.currentUser;
-
-      if (user) {
-        await saveScanHistory(
-          user.uid,
-          finalCode,
-          result.product?.product_name ||
-            result.product_name ||
-            "Unknown Product",
-          result
-        );
-      }
 
       setData(result);
       setType("barcode");
@@ -109,60 +84,22 @@ function Scanner() {
     }
   };
 
-  const handleBarcodeImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const uploadBarcodeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setLoading(true);
+      const scanResult = await scanBarcodeImage(file);
 
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/scan-barcode-image`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      let result: any = null;
-
-      try {
-        result = await res.json();
-      } catch (err) {
-        console.error("Failed to parse JSON from barcode scan response", err);
-        throw new Error("Invalid response from barcode scan service");
+      if (scanResult.status === "success" && scanResult.barcode) {
+        setBarcode(scanResult.barcode);
+        await analyzeBarcode(scanResult.barcode);
+      } else {
+        alert("Barcode not detected");
       }
-
-      console.log("Barcode upload result:", result);
-
-      // Accept both legacy and new response shapes
-      if (!res.ok && result?.status !== "success") {
-        throw new Error(result?.detail || "Barcode image scan failed");
-      }
-
-      const foundBarcode = result?.barcode || (result?.data && result.data.barcode);
-
-      if (result?.status === "success" && foundBarcode) {
-        setBarcode(foundBarcode);
-        await analyzeBarcode(foundBarcode);
-        return;
-      }
-
-      if (foundBarcode) {
-        setBarcode(foundBarcode);
-        await analyzeBarcode(foundBarcode);
-        return;
-      }
-
-      alert("No barcode found in image. Try manual barcode.");
-    } catch (error) {
-      console.error("Barcode image upload error:", error);
-      alert("Barcode image scan failed. Try manual barcode or camera scan.");
+    } catch {
+      alert("Barcode image scan failed");
     } finally {
       setLoading(false);
       e.target.value = "";
@@ -218,6 +155,7 @@ function Scanner() {
         <header className="app-header">
           <div className="brand">
             <div className="logo">🥗</div>
+
             <div>
               <h2>NutriScanAI</h2>
               <p>Smart food intelligence</p>
@@ -226,10 +164,7 @@ function Scanner() {
 
           <button
             className="menu-btn"
-            onClick={() => {
-              setMenuOpen(true);
-              setMenuView("main");
-            }}
+            onClick={() => setMenuOpen(true)}
             aria-label="Open Menu"
           >
             <span></span>
@@ -242,76 +177,29 @@ function Scanner() {
           <div className="drawer-overlay" onClick={() => setMenuOpen(false)}>
             <aside className="drawer" onClick={(e) => e.stopPropagation()}>
               <div className="drawer-head">
-                <h2>
-                  {menuView === "main" && "Menu"}
-                  {menuView === "settings" && "Settings"}
-                  {menuView === "theme" && "Theme"}
-                </h2>
-
-                <button
-                  className="close-btn"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setMenuView("main");
-                  }}
-                >
-                  ✕
-                </button>
+                <h2>Menu</h2>
+                <button onClick={() => setMenuOpen(false)}>✕</button>
               </div>
 
-              {menuView !== "main" && (
-                <button
-                  onClick={() =>
-                    setMenuView(menuView === "theme" ? "settings" : "main")
-                  }
-                >
-                  ← Back
-                </button>
-              )}
+              <button onClick={() => openPage("barcode")}>📦 Barcode Scanner</button>
+              <button onClick={() => openPage("ocr")}>🧠 OCR Scanner</button>
 
-                          {menuView === "main" && (
-                  <>
-                    <button onClick={() => setMenuView("settings")}>
-                      ⚙️ Settings ›
-                    </button>
+              <button
+                onClick={() => {
+                  setShowFeatures(true);
+                  setMenuOpen(false);
+                }}
+              >
+                🚀 Future Features
+              </button>
 
-                    <button
-                      onClick={() => {
-                        setShowFeatures(true);
-                        setMenuOpen(false);
-                        setMenuView("main");
-                      }}
-                    >
-                      🚀 Future Features
-                    </button>
+              <div className="theme-section">
+                <h3>🎨 Theme</h3>
 
-                    <button className="danger-btn" onClick={handleLogout}>
-                      🚪 Logout
-                    </button>
-                  </>
-                )}
-
-              {menuView === "settings" && (
-                <>
-                  <button onClick={() => setMenuView("theme")}>
-                    🎨 Theme ›
-                  </button>
-
-                  <button disabled>🔔 Notifications Soon</button>
-                  <button disabled>🌐 Language Soon</button>
-                  <button disabled>ℹ️ App Version 1.0.0</button>
-                </>
-              )}
-
-              {menuView === "theme" && (
-                <>
-                  <button onClick={() => setTheme("light")}>☀️ Light</button>
-                  <button onClick={() => setTheme("dark")}>🌙 Dark</button>
-                  <button onClick={() => setTheme("system")}>💻 System</button>
-
-                  <p className="small-text">Current Theme: {theme}</p>
-                </>
-              )}
+                <button onClick={() => setTheme("light")}>☀️ Light</button>
+                <button onClick={() => setTheme("dark")}>🌙 Dark</button>
+                <button onClick={() => setTheme("system")}>💻 System</button>
+              </div>
             </aside>
           </div>
         )}
@@ -321,31 +209,22 @@ function Scanner() {
           <p>Barcode scanning + OCR nutrition insights in one app.</p>
         </section>
 
-          <div className="tabs mobile-bottom-nav">
+        <div className="tabs">
           <button
             className={page === "barcode" ? "tab active" : "tab"}
             onClick={() => openPage("barcode")}
           >
-            📦
-            <span>Barcode</span>
+            📦 Barcode
           </button>
 
           <button
             className={page === "ocr" ? "tab active" : "tab"}
             onClick={() => openPage("ocr")}
           >
-            🧠
-            <span>OCR</span>
-          </button>
-
-          <button
-            className={page === "profile" ? "tab active" : "tab"}
-            onClick={() => openPage("profile")}
-          >
-            👤
-            <span>Profile</span>
+            🧠 OCR
           </button>
         </div>
+
         {showFeatures && (
           <section className="future-features">
             <h2>🚀 Future Features</h2>
@@ -362,10 +241,6 @@ function Scanner() {
             </div>
           </section>
         )}
-
-        {!showFeatures && page === "dashboard" && (
-  <Dashboard openPage={(page) => setPage(page)} />
-)}
 
         {!showFeatures && page === "barcode" && (
           <section className="action-card">
@@ -404,12 +279,7 @@ function Scanner() {
 
             <label className="upload-button secondary">
               🖼 Upload Barcode Image
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleBarcodeImageUpload}
-                hidden
-              />
+              <input type="file" accept="image/*" onChange={uploadBarcodeImage} hidden />
             </label>
           </section>
         )}
@@ -424,30 +294,12 @@ function Scanner() {
 
             <label className="upload-button">
               📸 {loading ? "Scanning..." : "Scan Nutrition Label"}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={uploadOCRImage}
-                hidden
-              />
+              <input type="file" accept="image/*" onChange={uploadOCRImage} hidden />
             </label>
           </section>
         )}
 
-        {!showFeatures && page === "history" && <ScanHistory
-  openPage={(page) => setPage(page)}
- />}
-          {!showFeatures && page === "profile" && (
-            <ProfilePage
-              openPage={(nextPage) => openPage(nextPage)}
-              openSettings={() => {
-                setMenuOpen(true);
-                setMenuView("settings");
-              }}
-            />
-          )}
         {!showFeatures &&
-          !["dashboard", "history", "profile"].includes(page) &&
           (data ? (
             <ResultView data={data} type={type} />
           ) : (
