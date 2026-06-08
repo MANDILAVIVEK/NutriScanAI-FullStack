@@ -125,7 +125,7 @@ function Scanner() {
         alert("Barcode not detected");
       }
     } catch {
-      alert("Barcode image scan failed");
+      alert("Barcode image scan failed. Try manual barcode or camera scan.");
     } finally {
       setLoading(false);
       e.target.value = "";
