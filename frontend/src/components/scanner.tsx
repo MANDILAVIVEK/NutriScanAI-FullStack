@@ -3,7 +3,6 @@ import { Html5Qrcode } from "html5-qrcode";
 import {
   uploadImageForOCR,
   getProductByBarcode,
-  scanBarcodeImage,
 } from "../api/client";
 import ResultView from "./resultview";
 import ScanHistory from "./ScanHistory";
@@ -110,21 +109,42 @@ function Scanner() {
     }
   };
 
-  const uploadBarcodeImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBarcodeImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     try {
       setLoading(true);
-      const scanResult = await scanBarcodeImage(file);
 
-      if (scanResult.status === "success" && scanResult.barcode) {
-        setBarcode(scanResult.barcode);
-        await analyzeBarcode(scanResult.barcode);
-      } else {
-        alert("Barcode not detected");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/scan-barcode-image`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.detail || "Barcode image scan failed");
       }
-    } catch {
+
+      if (!result.barcode) {
+        alert("No barcode found in image. Try a clearer image.");
+        return;
+      }
+
+      setBarcode(result.barcode);
+
+      await analyzeBarcode(result.barcode);
+    } catch (error) {
+      console.error("Barcode image upload error:", error);
       alert("Barcode image scan failed. Try manual barcode or camera scan.");
     } finally {
       setLoading(false);
@@ -370,7 +390,7 @@ function Scanner() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={uploadBarcodeImage}
+                onChange={handleBarcodeImageUpload}
                 hidden
               />
             </label>
