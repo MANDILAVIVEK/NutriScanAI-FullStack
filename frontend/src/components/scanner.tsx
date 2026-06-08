@@ -129,20 +129,37 @@ function Scanner() {
         }
       );
 
-      const result = await res.json();
+      let result: any = null;
 
-      if (!res.ok) {
-        throw new Error(result.detail || "Barcode image scan failed");
+      try {
+        result = await res.json();
+      } catch (err) {
+        console.error("Failed to parse JSON from barcode scan response", err);
+        throw new Error("Invalid response from barcode scan service");
       }
 
-      if (!result.barcode) {
-        alert("No barcode found in image. Try a clearer image.");
+      console.log("Barcode upload result:", result);
+
+      // Accept both legacy and new response shapes
+      if (!res.ok && result?.status !== "success") {
+        throw new Error(result?.detail || "Barcode image scan failed");
+      }
+
+      const foundBarcode = result?.barcode || (result?.data && result.data.barcode);
+
+      if (result?.status === "success" && foundBarcode) {
+        setBarcode(foundBarcode);
+        await analyzeBarcode(foundBarcode);
         return;
       }
 
-      setBarcode(result.barcode);
+      if (foundBarcode) {
+        setBarcode(foundBarcode);
+        await analyzeBarcode(foundBarcode);
+        return;
+      }
 
-      await analyzeBarcode(result.barcode);
+      alert("No barcode found in image. Try manual barcode.");
     } catch (error) {
       console.error("Barcode image upload error:", error);
       alert("Barcode image scan failed. Try manual barcode or camera scan.");
