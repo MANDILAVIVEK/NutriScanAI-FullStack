@@ -92,19 +92,9 @@ function ProfileSetup() {
         }}
       />
 
-      {dob && (
-        <p className="small-text">
-          Age: {calculateAge(dob)}
-        </p>
-      )}
+      {dob && <p className="small-text">Age: {calculateAge(dob)}</p>}
 
-      <select
-        value={gender}
-        onChange={(e) => {
-          setGender(e.target.value);
-          setSaved(false);
-        }}
-      >
+      <select value={gender} onChange={(e) => { setGender(e.target.value); setSaved(false); }}>
         <option value="">Select Gender</option>
         <option value="Male">Male</option>
         <option value="Female">Female</option>
@@ -112,13 +102,7 @@ function ProfileSetup() {
         <option value="Prefer not to say">Prefer not to say</option>
       </select>
 
-      <select
-        value={goal}
-        onChange={(e) => {
-          setGoal(e.target.value);
-          setSaved(false);
-        }}
-      >
+      <select value={goal} onChange={(e) => { setGoal(e.target.value); setSaved(false); }}>
         <option value="">Select Goal</option>
         <option value="Weight Loss">Weight Loss</option>
         <option value="Weight Gain">Weight Gain</option>
@@ -128,13 +112,7 @@ function ProfileSetup() {
         <option value="General Fitness">General Fitness</option>
       </select>
 
-      <select
-        value={diet}
-        onChange={(e) => {
-          setDiet(e.target.value);
-          setSaved(false);
-        }}
-      >
+      <select value={diet} onChange={(e) => { setDiet(e.target.value); setSaved(false); }}>
         <option value="">Select Diet Type</option>
         <option value="Normal">Normal</option>
         <option value="Vegetarian">Vegetarian</option>

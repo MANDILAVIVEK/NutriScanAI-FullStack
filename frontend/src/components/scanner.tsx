@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
+import ProfilePage from "./ProfilePage";
+import ScanHistory from "./ScanHistory";
 import {
   uploadImageForOCR,
   getProductByBarcode,
@@ -7,13 +9,15 @@ import {
 } from "../api/client";
 import ResultView from "./resultview";
 
-type PageType = "barcode" | "ocr";
+type PageType = "barcode" | "ocr" | "profile" | "history";
 type ThemeType = "light" | "dark" | "system";
+type MenuView = "main" | "settings";
 
 function Scanner() {
   const [page, setPage] = useState<PageType>("barcode");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
+  const [menuView, setMenuView] = useState<MenuView>("main");
 
   const [theme, setTheme] = useState<ThemeType>(
     (localStorage.getItem("theme") as ThemeType) || "system"
@@ -22,7 +26,6 @@ function Scanner() {
   const [barcode, setBarcode] = useState("");
   const [data, setData] = useState<any>(null);
   const [type, setType] = useState<"barcode" | "ocr" | null>(null);
-
   const [loading, setLoading] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
 
@@ -59,6 +62,11 @@ function Scanner() {
     setPage(nextPage);
     setShowFeatures(false);
     setMenuOpen(false);
+
+    if (nextPage !== "barcode" && nextPage !== "ocr") {
+      setData(null);
+      setType(null);
+    }
   };
 
   const analyzeBarcode = async (code?: string) => {
@@ -156,7 +164,6 @@ function Scanner() {
         <header className="app-header">
           <div className="brand">
             <div className="logo">🥗</div>
-
             <div>
               <h2>NutriScanAI</h2>
               <p>Smart food intelligence</p>
@@ -165,7 +172,10 @@ function Scanner() {
 
           <button
             className="menu-btn"
-            onClick={() => setMenuOpen(true)}
+            onClick={() => {
+              setMenuOpen(true);
+              setMenuView("main");
+            }}
             aria-label="Open Menu"
           >
             <span></span>
@@ -178,29 +188,51 @@ function Scanner() {
           <div className="drawer-overlay" onClick={() => setMenuOpen(false)}>
             <aside className="drawer" onClick={(e) => e.stopPropagation()}>
               <div className="drawer-head">
-                <h2>Menu</h2>
+                <h2>{menuView === "main" ? "Menu" : "Settings"}</h2>
                 <button onClick={() => setMenuOpen(false)}>✕</button>
               </div>
 
-              <button onClick={() => openPage("barcode")}>📦 Barcode Scanner</button>
-              <button onClick={() => openPage("ocr")}>🧠 OCR Scanner</button>
+              {menuView === "settings" && (
+                <button onClick={() => setMenuView("main")}>← Back</button>
+              )}
 
-              <button
-                onClick={() => {
-                  setShowFeatures(true);
-                  setMenuOpen(false);
-                }}
-              >
-                🚀 Future Features
-              </button>
+              {menuView === "main" && (
+                <>
+                  <button onClick={() => openPage("profile")}>👤 Profile</button>
 
-              <div className="theme-section">
-                <h3>🎨 Theme</h3>
+                  <button onClick={() => setMenuView("settings")}>
+                    ⚙️ Settings
+                  </button>
 
-                <button onClick={() => setTheme("light")}>☀️ Light</button>
-                <button onClick={() => setTheme("dark")}>🌙 Dark</button>
-                <button onClick={() => setTheme("system")}>💻 System</button>
-              </div>
+                  <button
+                    onClick={() => {
+                      setShowFeatures(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    🚀 Future Features
+                  </button>
+                </>
+              )}
+
+              {menuView === "settings" && (
+                <>
+                  <button onClick={() => setTheme("light")}>
+                    ☀️ Light Theme
+                  </button>
+
+                  <button onClick={() => setTheme("dark")}>
+                    🌙 Dark Theme
+                  </button>
+
+                  <button onClick={() => setTheme("system")}>
+                    💻 System Theme
+                  </button>
+
+                  <button disabled>🔔 Notifications Coming Soon</button>
+                  <button disabled>🌐 Language Coming Soon</button>
+                </>
+              )}
             </aside>
           </div>
         )}
@@ -223,6 +255,13 @@ function Scanner() {
             onClick={() => openPage("ocr")}
           >
             🧠 OCR
+          </button>
+
+          <button
+            className={page === "profile" ? "tab active" : "tab"}
+            onClick={() => openPage("profile")}
+          >
+            👤 Profile
           </button>
         </div>
 
@@ -280,7 +319,12 @@ function Scanner() {
 
             <label className="upload-button secondary">
               🖼 Upload Barcode Image
-              <input type="file" accept="image/*" onChange={uploadBarcodeImage} hidden />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={uploadBarcodeImage}
+                hidden
+              />
             </label>
           </section>
         )}
@@ -295,21 +339,39 @@ function Scanner() {
 
             <label className="upload-button">
               📸 {loading ? "Scanning..." : "Scan Nutrition Label"}
-              <input type="file" accept="image/*" onChange={uploadOCRImage} hidden />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={uploadOCRImage}
+                hidden
+              />
             </label>
           </section>
         )}
 
+        {!showFeatures && page === "profile" && (
+          <ProfilePage openPage={openPage} />
+        )}
+
+        {!showFeatures && page === "history" && (
+          <ScanHistory openPage={() => openPage("profile")} />
+        )}
+
         {!showFeatures &&
-          (data ? (
-            <ResultView data={data} type={type} />
-          ) : (
+          page !== "profile" &&
+          page !== "history" &&
+          data && <ResultView data={data} type={type} />}
+
+        {!showFeatures &&
+          page !== "profile" &&
+          page !== "history" &&
+          !data && (
             <section className="empty-card">
               <div className="empty-icon">📦</div>
               <h2>Ready to scan</h2>
               <p>Use barcode or OCR scanner to analyze your food product.</p>
             </section>
-          ))}
+          )}
       </section>
     </main>
   );

@@ -4,13 +4,10 @@ import { logout } from "../firebase/auth";
 
 function ProfilePage({
   openPage,
-  openSettings,
 }: {
-  openPage: (page: "dashboard" | "history") => void;
-  openSettings: () => void;
+  openPage: (page: "barcode" | "ocr" | "profile" | "history") => void;
 }) {
   const user = auth.currentUser;
-
   const handleLogout = async () => {
     await logout();
     window.location.reload();
@@ -21,7 +18,14 @@ function ProfilePage({
       <section className="profile-card">
         <div className="profile-top">
           {user?.photoURL ? (
-            <img src={user.photoURL} alt="Profile" className="profile-img" />
+                      <img
+            src={user.photoURL || "/avatar.png"}
+            alt="Profile"
+            className="profile-img"
+            onError={(e) => {
+              e.currentTarget.src = "/avatar.png";
+            }}
+          />
           ) : (
             <div className="profile-avatar-large">👤</div>
           )}
@@ -37,8 +41,8 @@ function ProfilePage({
         <section className="action-card">
           <h2>🔒 Login Required</h2>
           <p className="small-text">
-            Login to access Dashboard, Scan History, Health Profile and
-            personalized recommendations.
+            Login to access Profile, Scan History, Favorites and personalized
+            recommendations.
           </p>
 
           <button onClick={() => window.location.reload()}>
@@ -47,26 +51,31 @@ function ProfilePage({
         </section>
       ) : (
         <>
-          <section className="profile-actions">
-            <button onClick={() => openPage("dashboard")}>
-              📊 Dashboard
-            </button>
+        <section className="profile-actions">
+        <button className="account-header-btn">
+          👤 My Account
+        </button>
 
-            <button onClick={() => openPage("history")}>
-              📜 Scan History
-            </button>
+        <button onClick={() => openPage("history")}>
+          <span>📜 Scan History</span>
+          <b>›</b>
+        </button>
 
-            <button onClick={openSettings}>
-              ⚙️ Settings
-            </button>
+          <button>
+            <span>❤️ Favorites</span>
+            <b>›</b>
+          </button>
 
-            <button className="danger-btn" onClick={handleLogout}>
-              🚪 Logout
-            </button>
-          </section>
+          <button className="danger-btn" onClick={handleLogout}>
+            <span>🚪 Logout</span>
+            <b>›</b>
+          </button>
+        </section>
 
-          <ProfileSetup />
+        <ProfileSetup /> 
+        
         </>
+        
       )}
     </>
   );
