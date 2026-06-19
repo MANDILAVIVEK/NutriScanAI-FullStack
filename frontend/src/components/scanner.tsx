@@ -8,13 +8,17 @@ import {
   scanBarcodeImage,
 } from "../api/client";
 import ResultView from "./resultview";
+import HomePage from "./HomePage";
+import { auth } from "../firebase/firebaseConfig";
+import { saveScanHistory } from "../firebase/scanHistory";
+import FavoritesPage from "./FavoritesPage";
 
-type PageType = "barcode" | "ocr" | "profile" | "history";
+type PageType = "home" | "barcode" | "ocr" | "profile" | "history" | "favorites";
 type ThemeType = "light" | "dark" | "system";
 type MenuView = "main" | "settings";
 
 function Scanner() {
-  const [page, setPage] = useState<PageType>("barcode");
+  const [page, setPage] = useState<PageType>("home");
   const [menuOpen, setMenuOpen] = useState(false);
   const [showFeatures, setShowFeatures] = useState(false);
   const [menuView, setMenuView] = useState<MenuView>("main");
@@ -79,11 +83,24 @@ function Scanner() {
 
     try {
       setLoading(true);
-      const result = await getProductByBarcode(finalCode.trim());
+const result = await getProductByBarcode(finalCode.trim());
 
-      setData(result);
-      setType("barcode");
-      setPage("barcode");
+const user = auth.currentUser;
+
+if (user) {
+  await saveScanHistory(
+    user.uid,
+    finalCode.trim(),
+    result?.product?.product_name ||
+      result?.productName ||
+      "Unknown Product",
+    result
+  );
+}
+
+setData(result);
+setType("barcode");
+setPage("barcode");
       setShowFeatures(false);
     } catch {
       alert("Product not found or backend failed");
@@ -144,12 +161,25 @@ function Scanner() {
 
     try {
       setLoading(true);
-      const result = await uploadImageForOCR(file);
+const result = await uploadImageForOCR(file);
 
-      setData(result);
-      setType("ocr");
-      setPage("ocr");
-      setShowFeatures(false);
+const user = auth.currentUser;
+
+if (user) {
+  await saveScanHistory(
+    user.uid,
+    "OCR",
+    result?.product?.product_name ||
+      result?.productName ||
+      "OCR Scan",
+    result
+  );
+}
+
+setData(result);
+setType("ocr");
+setPage("ocr");
+setShowFeatures(false);
     } catch {
       alert("OCR failed. Check backend.");
     } finally {
@@ -243,27 +273,34 @@ function Scanner() {
         </section>
 
         <div className="tabs">
-          <button
-            className={page === "barcode" ? "tab active" : "tab"}
-            onClick={() => openPage("barcode")}
-          >
-            📦 Barcode
-          </button>
+            <button
+              className={page === "home" ? "tab active" : "tab"}
+              onClick={() => openPage("home")}
+            >
+              🏠 Home
+            </button>
 
-          <button
-            className={page === "ocr" ? "tab active" : "tab"}
-            onClick={() => openPage("ocr")}
-          >
-            🧠 OCR
-          </button>
+            <button
+              className={page === "barcode" ? "tab active" : "tab"}
+              onClick={() => openPage("barcode")}
+            >
+              📦 Barcode
+            </button>
 
-          <button
-            className={page === "profile" ? "tab active" : "tab"}
-            onClick={() => openPage("profile")}
-          >
-            👤 Profile
-          </button>
-        </div>
+            <button
+              className={page === "ocr" ? "tab active" : "tab"}
+              onClick={() => openPage("ocr")}
+            >
+              🧠 OCR
+            </button>
+
+            <button
+              className={page === "profile" ? "tab active" : "tab"}
+              onClick={() => openPage("profile")}
+            >
+              👤 Profile
+            </button>
+          </div>
 
         {showFeatures && (
           <section className="future-features">
@@ -281,6 +318,9 @@ function Scanner() {
             </div>
           </section>
         )}
+        {!showFeatures && page === "home" && (
+        <HomePage openPage={openPage} />
+         )}
 
         {!showFeatures && page === "barcode" && (
           <section className="action-card">
@@ -356,13 +396,18 @@ function Scanner() {
         {!showFeatures && page === "history" && (
           <ScanHistory openPage={() => openPage("profile")} />
         )}
-
-        {!showFeatures &&
+        {!showFeatures && page === "favorites" && (
+  <FavoritesPage openPage={openPage} />
+)}
+       {!showFeatures &&
+          page !== "home" &&
           page !== "profile" &&
           page !== "history" &&
+          page !== "favorites" &&
           data && <ResultView data={data} type={type} />}
 
         {!showFeatures &&
+          page !== "home" &&
           page !== "profile" &&
           page !== "history" &&
           !data && (
